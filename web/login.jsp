@@ -12,18 +12,25 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login Page</title>
-        <link rel="stylesheet" href="style-auth.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/style-auth.css">
     </head>
     <body>
         <div class="login-container">
             <h2>Login</h2>
-            <form method="POST" action="auth/login">
-                <input type="text" name="username" placeholder="Username" required>
+            <%
+                // Get attributes sent by servlet
+                String username = (String) request.getAttribute("username");
+                boolean wrongPassword = request.getAttribute("wrongPassword") != null ? true : false;
+            %>
+            <form method="POST" action="${pageContext.request.contextPath}/auth/login">
+                <input type="text" name="username" placeholder="Username" value="<%= (username != null) ? username : "" %>" required>
                 <input type="password" name="password" placeholder="Password" required>
                 <button type="submit">Login</button>
             </form>
             <div class="footer">
-                <!-- <p>Don't have an account? <a href="#">Sign up</a></p>  ddd-->
+                <% if (wrongPassword) { %>
+                    <p style="color:red;">Incorrect username or password</p>
+                <% } %>
             </div>
         </div>
     </body>

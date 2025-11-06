@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
 import java.time.Duration;
+import java.util.Set;
 
 /**
  *
@@ -26,7 +27,7 @@ public class AccountManagerServiceProvider {
         AuthDataStore store = new MemoryAuthDataStore();
         accountManager = new AccountManager(store, Duration.ofDays(7));
         try {
-            accountManager.register("Mohammed jasem mohammed alaajel alteneiji","mohammed", "1111");
+            accountManager.register("Mohammed jasem mohammed alaajel alteneiji","mohammed", "1111", Set.of(User.Role.ADMIN,User.Role.STUDENT ,User.Role.CANDIDATE));
         } catch (Exception ex) {
             System.getLogger(AccountManagerServiceProvider.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }

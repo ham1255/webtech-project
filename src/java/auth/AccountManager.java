@@ -4,6 +4,7 @@
  */
 package auth;
 
+import auth.User.Role;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -37,11 +39,13 @@ public class AccountManager {
     }
 
     /** Registers a user; throws if username is taken.
+     * @param fullName
      * @param username
      * @param password
+     * @param roles
      * @return 
      * @throws java.lang.Exception */
-    public String register(String fullName, String username, String password) throws Exception {
+    public String register(String fullName, String username, String password, Set<Role> roles) throws Exception {
         Objects.requireNonNull(username);
         Objects.requireNonNull(password);
 
@@ -60,7 +64,8 @@ public class AccountManager {
                 Base64.getEncoder().encodeToString(salt),
                 DEFAULT_ITERATIONS,
                 DEFAULT_KEYLEN_BYTES,
-                Instant.now()
+                Instant.now(),
+                roles
         );
 
         store.createUser(user);
@@ -89,7 +94,7 @@ public class AccountManager {
 
     /** Returns userId if the session is valid (and not expired); otherwise empty.
      * @param sessionId
-     * @return 
+     * @return user id
      * @throws java.lang.Exception */
     public Optional<String> validateSession(String sessionId) throws Exception {
         Optional<Session> s = store.findSessionById(sessionId);
@@ -119,31 +124,38 @@ public class AccountManager {
     }
 
     /** Changes password after verifying the old one; revokes all sessions.
-     * @param userId
+     * @param user
      * @param oldPassword
      * @param newPassword
      * @throws java.lang.Exception */
-    public void changePassword(String userId, String oldPassword, String newPassword) throws Exception {
-        User user = store.findUserById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
-
+    public void changePassword(User user, String oldPassword, String newPassword) throws Exception {
         if (!verifyPassword(oldPassword.toCharArray(), user)) {
             throw new IllegalArgumentException("INVALID_CREDENTIALS");
         }
+        changePassword(user, newPassword);
+    }
+    
+    
+    /** Changes password WITHOUT verifying the old one; revokes all sessions.
+     * @param user
+     * @param newPassword
+     * @throws java.lang.Exception */
+    public void changePassword(User user, String newPassword) throws Exception {
 
         byte[] newSalt = randomBytes(SALT_BYTES);
         HashOut ho = hashPassword(newPassword.toCharArray(), newSalt, DEFAULT_ITERATIONS, DEFAULT_KEYLEN_BYTES);
 
-        User updated = user.withPassword(
+        user.updatePassword(
                 Base64.getEncoder().encodeToString(ho.dk),
                 Base64.getEncoder().encodeToString(newSalt),
                 DEFAULT_ITERATIONS,
                 DEFAULT_KEYLEN_BYTES
         );
 
-        store.updateUser(updated);
-        store.deleteSessionsForUser(userId); // rotate sessions after password change
+        store.updateUser(user);
+        store.deleteSessionsForUser(user.id); // rotate sessions after password change
     }
+    
 
     /* ===== Helpers ===== */
 
@@ -179,8 +191,9 @@ public class AccountManager {
         return b;
     }
     
-    public Optional<User> getUserById(String userId) throws Exception {
-        return store.findUserById(userId);
+    
+    public User getUserById(String userId) throws Exception {
+        return store.findUserById(userId).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
     }
    
 }

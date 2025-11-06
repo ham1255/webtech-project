@@ -9,7 +9,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css
 
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #660631, #9a0f52);
+    background: linear-gradient(143deg, #5C62D6, #43A5BE);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -28,7 +28,7 @@ body {
 
 h2 {
     margin-bottom: 25px;
-    color: #660631;
+    color: #5C62D6;
 }
 
 input[type="text"],
@@ -44,12 +44,12 @@ input[type="password"] {
 
 input[type="text"]:focus,
 input[type="password"]:focus {
-    border-color: #660631;
+    border-color: #5C62D6;
     outline: none;
 }
 
 button {
-    background-color: #660631;
+    background-color: #5C62D6;
     color: #fff;
     border: none;
     padding: 12px 0;
@@ -61,7 +61,7 @@ button {
 }
 
 button:hover {
-    background-color: #9a0f52;
+    background-color: #43A5BE;
 }
 
 .footer {

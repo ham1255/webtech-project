@@ -5,6 +5,7 @@
 package auth;
 
 import java.time.Instant;
+import java.util.Set;
 
 /**
  *
@@ -14,14 +15,19 @@ public class User{
     public final String id;
     public final String username;
     public final String fullName;
-    public final String passwordHashB64; // derived key
-    public final String saltB64;         // per-user salt
-    public final int iterations;         // PBKDF2 rounds
-    public final int keyLenBytes;        // dk length in bytes
+    public String passwordHashB64; // derived key
+    public String saltB64;         // per-user salt
+    public int iterations;         // PBKDF2 rounds
+    public int keyLenBytes;        // dk length in bytes
     public final Instant createdAt;
-
+    public final Set<Role> roles;
+    
+    public static enum Role {
+        ADMIN, CANDIDATE, STUDENT
+    }
+    
     public User(String id,String fullName, String username, String passwordHashB64, String saltB64,
-                      int iterations, int keyLenBytes, Instant createdAt) {
+                      int iterations, int keyLenBytes, Instant createdAt, Set<Role> roles) {
         this.id = id;
         this.fullName = fullName;
         this.username = username;
@@ -30,9 +36,29 @@ public class User{
         this.iterations = iterations;
         this.keyLenBytes = keyLenBytes;
         this.createdAt = createdAt;
+        this.roles = roles;
     }
 
-    public User withPassword(String newHashB64, String newSaltB64, int newIterations, int newKeyLen) {
-        return new User(this.id, this.fullName, this.username, newHashB64, newSaltB64, newIterations, newKeyLen, this.createdAt);
+    public void updatePassword(String passwordHashB64, String saltB64, int iterations, int keyLenBytes) {
+        this.passwordHashB64 = passwordHashB64;
+        this.saltB64 = saltB64;
+        this.iterations = iterations;
+        this.keyLenBytes = keyLenBytes;
+    }
+    
+    public void addRole(Role role) {
+        roles.add(role);
+    }
+
+    public void removeRole(Role role) {
+        roles.remove(role);
+    }
+
+    public boolean hasRole(Role role) {
+        return roles.contains(role);
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
     }
 }

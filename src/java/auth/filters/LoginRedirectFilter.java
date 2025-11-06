@@ -19,17 +19,17 @@ import java.io.IOException;
  *
  * @author mohammed
  */
-@WebFilter("/login.jsp")
+@WebFilter({"/auth/login", "/login"})
 public class LoginRedirectFilter extends HttpFilter {
 
     @Inject
     private AccountManagerServiceProvider serviceProvider;
 
     @Override
-    protected void doFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        var session = req.getSession(false);
+        var session = request.getSession(false);
 
         if (session != null) {
             String sid = (String) session.getAttribute("sessionId");
@@ -37,15 +37,18 @@ public class LoginRedirectFilter extends HttpFilter {
                 try {
                     AccountManager am = serviceProvider.getAccountManager();
                     if (am.validateSession(sid).isPresent()) {
-                        res.sendRedirect("index.jsp");
+                        response.sendRedirect(request.getContextPath() +"/app");
                         return;
                     }
                 } catch (Exception e) {
-                    // ignore — continue to login.jsp
+                   
                 }
             }
         }
 
-        chain.doFilter(req, res);
+        chain.doFilter(request, response);
     }
+    
+    
+    
 }

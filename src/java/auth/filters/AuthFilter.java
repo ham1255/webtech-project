@@ -18,32 +18,32 @@ import java.io.IOException;
  *
  * @author mohammed
  */
-@WebFilter("/index.jsp")
+@WebFilter({"/app", "/app/*"})
 public class AuthFilter extends HttpFilter  {
     @Inject
     private AccountManagerServiceProvider provider;
 
     @Override
-    protected void doFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        var session = req.getSession(false);
+        var session = request.getSession(false);
         if (session == null || session.getAttribute("sessionId") == null) {
-            res.sendRedirect("login.jsp");
+            response.sendRedirect(request.getContextPath() +"/auth/login");
             return;
         }
 
         String sid = (String) session.getAttribute("sessionId");
         try {
             if (provider.getAccountManager().validateSession(sid).isEmpty()) {
-                res.sendRedirect("login.jsp");
+                response.sendRedirect(request.getContextPath() +"/auth/login");
                 return;
             }
         } catch (Exception e) {
-            res.sendRedirect("login.jsp");
+            response.sendRedirect(request.getContextPath() +"/auth/login");
             return;
         }
 
-        chain.doFilter(req, res);
+        chain.doFilter(request, response);
     }
 }

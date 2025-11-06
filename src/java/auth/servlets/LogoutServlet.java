@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpSession;
  *
  * @author mohammed
  */
-@WebServlet(name = "LogoutServlet", urlPatterns = {"/auth/logout"})
+@WebServlet(name = "LogoutServlet", urlPatterns = {"/auth/logout", "/logout"})
 public class LogoutServlet extends HttpServlet {
 
     @Inject
@@ -49,6 +49,6 @@ public class LogoutServlet extends HttpServlet {
         }
 
         
-        res.sendRedirect(req.getContextPath() +"/login.jsp");
+        res.sendRedirect(req.getContextPath() +"/login");
     }
 }
