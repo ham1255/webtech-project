@@ -27,7 +27,12 @@ public class AccountManagerServiceProvider {
         AuthDataStore store = new MemoryAuthDataStore();
         accountManager = new AccountManager(store, Duration.ofDays(7));
         try {
-            accountManager.register("Mohammed jasem mohammed alaajel alteneiji","mohammed", "1111", Set.of(User.Role.ADMIN,User.Role.STUDENT ,User.Role.CANDIDATE));
+            accountManager.register("Mohammed sucks","mohammed", "1111", Set.of(User.Role.ADMIN,User.Role.STUDENT ,User.Role.CANDIDATE));
+            accountManager.register("Rashid sheep","rashid", "1111", Set.of());
+            accountManager.register("ahmad lost","ahmad", "1111", Set.of(User.Role.CANDIDATE));
+            accountManager.register("omar nope","omar", "1111", Set.of(User.Role.ADMIN));
+            accountManager.register("ali FUNKO","ali", "1111", Set.of(User.Role.STUDENT));
+            
         } catch (Exception ex) {
             System.getLogger(AccountManagerServiceProvider.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }

@@ -1,5 +1,13 @@
+<%@page import="auth.User.Role"%>
+<%@page import="java.util.Set"%>
 <%@ page contentType="text/html; charset=UTF-8" %> 
 <% String ctx = request.getContextPath();%>
+<%
+            // Get attributes sent by servlet
+            String name = (String) request.getAttribute("name");
+            String id = (String) request.getAttribute("id");
+            Set<Role> roles = (Set<Role>) request.getAttribute("roles");
+%>
 <style> :root {
     --c1:#5C62D6; /* main blue-violet */
     --c2:#43A5BE; /* teal accent */
@@ -49,6 +57,14 @@ body {
     background:rgba(255,255,255,.25);
     transform:scale(1.05);
 }
+
+.nav a.admin {
+    background: #c0392b; /* red background */
+}
+.nav a.admin:hover {
+    background: #e74c3c; /* brighter red on hover */
+}
+
 .brand {
     font-size:18px;
     font-weight:700;
@@ -102,14 +118,34 @@ body {
 <nav class="nav">
     <div class="nav-left">
         <span class="brand">Student E-Voting portal</span>
-        <a href="<%= ctx%>/app">Home</a> </div> <div class="nav-right">
+        <a href="<%= ctx%>/app">Home</a>
+        
+        <%-- Visible to all users who are STUDENT or CANDIDATE --%>
+    <% if (roles != null && (roles.contains(Role.STUDENT) || roles.contains(Role.CANDIDATE))) { %>
+        <a href="<%= ctx %>/app/voting">Voting</a>
+    <% } %>
+
+    <%-- Visible only to candidates --%>
+    <% if (roles != null && roles.contains(Role.CANDIDATE)) { %>
+        <a href="<%= ctx %>/app/candidate">Candidate Page</a>
+    <% } %>
+
+    <%-- Visible only to admin --%>
+    <% if (roles != null && roles.contains(Role.ADMIN)) { %>
+        <a class="admin" href="<%= ctx %>/app/admin">Admin</a>
+    <% } %>
+        
+        
+    </div> 
+    <div class="nav-right">
         <form action="<%= ctx%>/auth/logout" method="post" style="margin:0;">
-            <button type="submit">Logout</button> </form> 
-        <button class="kebab" id="menuToggle" title="More"> ⋮ 
-        </button> </div> <div class="menu" id="moreMenu"> 
-            <a href="<%= ctx%>/profile">Profile</a>
-            <a href="<%= ctx%>/help">help & Support</a> 
-        </div> 
+        <button type="submit">Logout</button> </form> 
+        <button class="kebab" id="menuToggle" title="More">⋮</button>
+    </div> 
+    <div class="menu" id="moreMenu"> 
+            <a href="<%= ctx%>/app/profile">Profile</a>
+            <a href="<%= ctx%>/app/support">help & Support</a> 
+    </div> 
 </nav> 
 
 <script> const toggle = document.getElementById("menuToggle");
