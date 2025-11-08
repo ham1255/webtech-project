@@ -7,6 +7,7 @@
 <%@page import="auth.User.Role"%>
 <%@page import="java.util.Set"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<% String ctx = request.getContextPath();%>
 <!DOCTYPE html>
 <html>
     <head>

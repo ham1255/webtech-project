@@ -4,6 +4,7 @@
  */
 package auth;
 
+import auth.AuthDataStore.PageableUsers;
 import auth.User.Role;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -40,16 +41,16 @@ public class AccountManager {
 
     /** Registers a user; throws if username is taken.
      * @param fullName
-     * @param username
+     * @param email
      * @param password
      * @param roles
      * @return 
      * @throws java.lang.Exception */
-    public String register(String fullName, String username, String password, Set<Role> roles) throws Exception {
-        Objects.requireNonNull(username);
+    public String register(String fullName, String email, String password, Set<Role> roles) throws Exception {
+        Objects.requireNonNull(email);
         Objects.requireNonNull(password);
 
-        if (store.findUserByUsername(username).isPresent()) {
+        if (store.findUserByEmail(email).isPresent()) {
             throw new IllegalStateException("USERNAME_TAKEN");
         }
 
@@ -59,7 +60,7 @@ public class AccountManager {
         User user = new User(
                 UUID.randomUUID().toString(),
                 fullName,
-                username,
+                email,
                 Base64.getEncoder().encodeToString(ho.dk),
                 Base64.getEncoder().encodeToString(salt),
                 DEFAULT_ITERATIONS,
@@ -73,12 +74,12 @@ public class AccountManager {
     }
 
     /** Verifies credentials; on success creates and returns a new session ID.
-     * @param username
+     * @param email
      * @param password
      * @return 
      * @throws java.lang.Exception */
-    public String login(String username, String password) throws Exception {
-        User user = store.findUserByUsername(username)
+    public String login(String email, String password) throws Exception {
+        User user = store.findUserByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("INVALID_CREDENTIALS"));
 
         if (!verifyPassword(password.toCharArray(), user)) {
@@ -194,6 +195,14 @@ public class AccountManager {
     
     public User getUserById(String userId) throws Exception {
         return store.findUserById(userId).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+    }
+    
+    public PageableUsers getUsersByPage(int page) {
+        return store.getUsersByPage(page);
+    }
+
+    public AuthDataStore getStore() {
+        return store;
     }
    
 }

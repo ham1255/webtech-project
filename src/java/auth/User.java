@@ -13,24 +13,24 @@ import java.util.Set;
  */
 public class User{
     public final String id;
-    public final String username;
-    public final String fullName;
+    public String email;
+    public String fullName;
     public String passwordHashB64; // derived key
     public String saltB64;         // per-user salt
     public int iterations;         // PBKDF2 rounds
     public int keyLenBytes;        // dk length in bytes
     public final Instant createdAt;
-    public final Set<Role> roles;
+    public Set<Role> roles;
     
     public static enum Role {
         ADMIN, CANDIDATE, STUDENT
     }
     
-    public User(String id,String fullName, String username, String passwordHashB64, String saltB64,
+    public User(String id,String fullName, String email, String passwordHashB64, String saltB64,
                       int iterations, int keyLenBytes, Instant createdAt, Set<Role> roles) {
         this.id = id;
         this.fullName = fullName;
-        this.username = username;
+        this.email = email;
         this.passwordHashB64 = passwordHashB64;
         this.saltB64 = saltB64;
         this.iterations = iterations;
@@ -46,14 +46,6 @@ public class User{
         this.keyLenBytes = keyLenBytes;
     }
     
-    public void addRole(Role role) {
-        roles.add(role);
-    }
-
-    public void removeRole(Role role) {
-        roles.remove(role);
-    }
-
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }
