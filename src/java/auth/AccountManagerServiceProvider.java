@@ -4,10 +4,9 @@
  */
 package auth;
 
-import auth.datastoreimpls.MemoryAuthDataStore;
+import auth.datastoreimpls.*;
 import jakarta.annotation.PostConstruct;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,27 +19,25 @@ import java.util.Set;
  *
  * @author mohammed
  */
-@Singleton
-@Startup
+@ApplicationScoped
 public class AccountManagerServiceProvider {
 
     private AccountManager accountManager;
 
     @PostConstruct
     public void init() {
-        AuthDataStore store = new MemoryAuthDataStore();
-        accountManager = new AccountManager(store, Duration.ofDays(7));
         try {
-            accountManager.register("202311566","Mohammed jasem alteneiji", "202311566@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            accountManager.register("202310776","Ahmad ashraf Tarawneh", "202310776@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            accountManager.register("202311242","Abdijabar Ahmed Mohamed", "202311242@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            accountManager.register("202310156","Omar Magd Juratly", "202310156@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            accountManager.register("202310454","Omar Abdulnasser Talal Haneyeh", "202310454@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            
-            random(60);
-           
+            AuthDataStore store = new MySqlAuthDataStore("jdbc:mysql://192.168.0.8:3306/votingsystem?useSSL=false&requireSSL=false&verifyServerCertificate=false", "admin", "admin");//= new MemoryAuthDataStore();
+            accountManager = new AccountManager(store, Duration.ofDays(7));
+            //accountManager.register("202311566", "Mohammed jasem alteneiji", "202311566@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+           // accountManager.register("202310776", "Ahmad ashraf Tarawneh", "202310776@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+           // accountManager.register("202311242", "Abdijabar Ahmed Mohamed", "202311242@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+           // accountManager.register("202310156", "Omar Magd Juratly", "202310156@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+          // accountManager.register("202310454", "Omar Abdulnasser Talal Haneyeh", "202310454@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            //random(60);
         } catch (Exception ex) {
-            System.getLogger(AccountManagerServiceProvider.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
     }
 
@@ -110,7 +107,9 @@ public class AccountManagerServiceProvider {
     private void random(int x) throws Exception {
         Random random = new Random();
         List<User.Role> allRoles = Arrays.asList(User.Role.STUDENT, User.Role.CANDIDATE);
-        if (x < 1) x = 1;
+        if (x < 1) {
+            x = 1;
+        }
         // Generate x users
         final int base = 200000000;
         for (int i = 1; i <= x; i++) {
@@ -119,7 +118,7 @@ public class AccountManagerServiceProvider {
             String fullName = first + " " + last;
 
             // simple username (lowercase, no spaces)
-            String username = (base + x) + "@ajmanuni.ac.ae";
+            String username = (base + i) + "@ajmanuni.ac.ae";
 
             // Random role selection (1–3 roles)
             Set<User.Role> roles = new HashSet<>();
@@ -130,7 +129,7 @@ public class AccountManagerServiceProvider {
                 roles.add(allRoles.get(j));
             }
 
-            accountManager.register(fullName, username, "1111", roles);
+            accountManager.register(String.valueOf(i + base), fullName, username, "1111", roles);
         }
     }
 }

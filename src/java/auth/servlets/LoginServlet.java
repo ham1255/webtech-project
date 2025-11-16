@@ -23,7 +23,7 @@ import jakarta.servlet.http.HttpSession;
 public class LoginServlet extends HttpServlet {
 
   
-   @Inject
+    @Inject
     private AccountManagerServiceProvider serviceProvider;
    
     @Override
@@ -32,6 +32,8 @@ public class LoginServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         AccountManager am = serviceProvider.getAccountManager();
+        if (am == null) {
+        throw new RuntimeException("idk null?????");}
         try {
             String sessionId = am.login(username, password);
 

@@ -6,8 +6,7 @@ package election;
 
 import election.datastoreimpl.MemoryElectionDataStore;
 import jakarta.annotation.PostConstruct;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 
 
@@ -15,8 +14,7 @@ import java.time.LocalDateTime;
  *
  * @author mohammed
  */
-@Singleton
-@Startup
+@ApplicationScoped
 public class ElectionServiceProvider {
 
 
@@ -28,7 +26,7 @@ public class ElectionServiceProvider {
         LocalDateTime preStartsAt = LocalDateTime.now(); 
         LocalDateTime startsAt = preStartsAt.plusMinutes(1);
         LocalDateTime endsAt = startsAt.plusMinutes(1);
-        electionDataStore.createElection("Student Council election",preStartsAt,startsAt,endsAt);
+        //electionDataStore.createElection("Student Council election",preStartsAt,startsAt,endsAt);
     }
 
     public ElectionDataStore getElectionDataStore() {

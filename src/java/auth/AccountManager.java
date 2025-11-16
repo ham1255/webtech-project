@@ -50,9 +50,10 @@ public class AccountManager {
      * @throws java.lang.Exception
      */
     public String register(String id, String fullName, String email, String password, Set<Role> roles) throws Exception {
+        Objects.requireNonNull(id);
         Objects.requireNonNull(email);
         Objects.requireNonNull(password);
-
+        
         if (store.findUserByEmail(email).isPresent()) {
             throw new IllegalStateException("USERNAME_TAKEN");
         }
