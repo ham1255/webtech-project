@@ -26,6 +26,6 @@
                 String id = (String) request.getAttribute("id");
                 Set<Role> roles = (Set<Role>)request.getAttribute("roles");
             %>
-        <p>Dear <%=name%> roles: <%= roles%> there is No active election</p>
+        <p>Dear <%=name%> roles: <%= roles%> there is No active election you are currently in</p>
     </body>
 </html>

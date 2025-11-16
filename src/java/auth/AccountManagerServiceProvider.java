@@ -31,12 +31,14 @@ public class AccountManagerServiceProvider {
         AuthDataStore store = new MemoryAuthDataStore();
         accountManager = new AccountManager(store, Duration.ofDays(7));
         try {
-            accountManager.register("Mohammed sucks", "mohammed", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
-            accountManager.register("Rashid sheep", "rashid", "1111", Set.of());
-            accountManager.register("ahmad lost", "ahmad", "1111", Set.of(User.Role.CANDIDATE));
-            accountManager.register("omar nope", "omar", "1111", Set.of(User.Role.ADMIN));
-            accountManager.register("ali FUNKO", "ali", "1111", Set.of(User.Role.STUDENT));
-            random();
+            accountManager.register("202311566","Mohammed jasem alteneiji", "202311566@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            accountManager.register("202310776","Ahmad ashraf Tarawneh", "202310776@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            accountManager.register("202311242","Abdijabar Ahmed Mohamed", "202311242@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            accountManager.register("202310156","Omar Magd Juratly", "202310156@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            accountManager.register("202310454","Omar Abdulnasser Talal Haneyeh", "202310454@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
+            
+            random(60);
+           
         } catch (Exception ex) {
             System.getLogger(AccountManagerServiceProvider.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }
@@ -49,7 +51,7 @@ public class AccountManagerServiceProvider {
     List<String> firstNames = Arrays.asList(
             "Mohammed", "Ahmed", "Saeed", "Ali", "Rashid", "Khalid", "Salman", "Yousef", "Ibrahim", "Fahad",
             "Nasser", "Abdullah", "Abdulaziz", "Hamad", "Faisal", "Saif", "Rakan", "Majed", "Suheil", "Talal",
-            "Marwan", "Jaber", "Rami", "Ziyad", "Omar", "Fares", "Bader", "Anwar", "Nawaf", "Raed", "falafel"
+            "Marwan", "Jaber", "Rami", "Ziyad", "Omar", "Fares", "Bader", "Anwar", "Nawaf", "Raed", "Falafel bin sheep"
     );
 
     List<String> lastNames = Arrays.asList(
@@ -81,28 +83,50 @@ public class AccountManagerServiceProvider {
             //  Jordan
             "AlMajali", "AlFayez", "AlKhasawneh", "AlRifai", "AlTarawneh", "AlMasri", "AlAbbadi", "AlBataineh",
             "AlZoubi", "AlMomani", "AlRawashdeh", "AlShawabkeh", "AlHuneiti", "AlKhateeb", "AlAdwan", "AlArmouti",
-            "AlMadi", "AlQudah", "AlAjarmeh", "AlFarra"
+            "AlMadi", "AlQudah", "AlAjarmeh", "AlFarra",
+            // syria
+            "Baggara",
+            "Enezi",
+            "Shammar",
+            "Jubur",
+            "Taie",
+            "Dulaim",
+            "Hadeediyin",
+            "Walda",
+            "Na'im",
+            "Rwala",
+            "Fadl",
+            "Mawali",
+            "Ageidat",
+            "Bani Khalid",
+            "Sarhan",
+            "Al Bu Saraya",
+            "Al Bu Kamal",
+            "Al Bu Khabur",
+            "Al Bu Hamdan",
+            "Al Bu Hassan"
     );
 
-    private void random() throws Exception {
+    private void random(int x) throws Exception {
         Random random = new Random();
         List<User.Role> allRoles = Arrays.asList(User.Role.STUDENT, User.Role.CANDIDATE);
-
-        // Generate 60 users
-        for (int i = 1; i <= 60; i++) {
+        if (x < 1) x = 1;
+        // Generate x users
+        final int base = 200000000;
+        for (int i = 1; i <= x; i++) {
             String first = firstNames.get(random.nextInt(firstNames.size()));
             String last = lastNames.get(random.nextInt(lastNames.size()));
             String fullName = first + " " + last;
 
             // simple username (lowercase, no spaces)
-            String username = (first.substring(0, 1) + last).toLowerCase() + i + "@mail.com";
+            String username = (base + x) + "@ajmanuni.ac.ae";
 
             // Random role selection (1–3 roles)
             Set<User.Role> roles = new HashSet<>();
             int roleCount = random.nextInt(2) + 1; // between 1 and 2
             Collections.shuffle(allRoles);
             for (int j = 0; j < roleCount; j++) {
-                
+
                 roles.add(allRoles.get(j));
             }
 

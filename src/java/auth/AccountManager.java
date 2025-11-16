@@ -22,9 +22,8 @@ import javax.crypto.spec.PBEKeySpec;
  *
  * @author mohammed
  */
-
-
 public class AccountManager {
+
     private static final String PBKDF2_ALG = "PBKDF2WithHmacSHA256";
     private static final int DEFAULT_ITERATIONS = 150_000;
     private static final int DEFAULT_KEYLEN_BYTES = 32; // 256-bit derived key
@@ -39,14 +38,18 @@ public class AccountManager {
         this.sessionTtl = sessionTtl;
     }
 
-    /** Registers a user; throws if username is taken.
+    /**
+     * Registers a user; throws if username is taken.
+     *
+     * @param id
      * @param fullName
      * @param email
      * @param password
      * @param roles
-     * @return 
-     * @throws java.lang.Exception */
-    public String register(String fullName, String email, String password, Set<Role> roles) throws Exception {
+     * @return
+     * @throws java.lang.Exception
+     */
+    public String register(String id, String fullName, String email, String password, Set<Role> roles) throws Exception {
         Objects.requireNonNull(email);
         Objects.requireNonNull(password);
 
@@ -58,7 +61,7 @@ public class AccountManager {
         HashOut ho = hashPassword(password.toCharArray(), salt, DEFAULT_ITERATIONS, DEFAULT_KEYLEN_BYTES);
 
         User user = new User(
-                UUID.randomUUID().toString(),
+                id,
                 fullName,
                 email,
                 Base64.getEncoder().encodeToString(ho.dk),
@@ -73,11 +76,18 @@ public class AccountManager {
         return user.id;
     }
 
-    /** Verifies credentials; on success creates and returns a new session ID.
+    public String register(String fullName, String email, String password, Set<Role> roles) throws Exception {
+        return register(UUID.randomUUID().toString(), fullName, email, password, roles);
+    }
+
+    /**
+     * Verifies credentials; on success creates and returns a new session ID.
+     *
      * @param email
      * @param password
-     * @return 
-     * @throws java.lang.Exception */
+     * @return
+     * @throws java.lang.Exception
+     */
     public String login(String email, String password) throws Exception {
         User user = store.findUserByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("INVALID_CREDENTIALS"));
@@ -93,13 +103,19 @@ public class AccountManager {
         return sessionId;
     }
 
-    /** Returns userId if the session is valid (and not expired); otherwise empty.
+    /**
+     * Returns userId if the session is valid (and not expired); otherwise
+     * empty.
+     *
      * @param sessionId
      * @return user id
-     * @throws java.lang.Exception */
+     * @throws java.lang.Exception
+     */
     public Optional<String> validateSession(String sessionId) throws Exception {
         Optional<Session> s = store.findSessionById(sessionId);
-        if (s.isEmpty()) return Optional.empty();
+        if (s.isEmpty()) {
+            return Optional.empty();
+        }
 
         Session sr = s.get();
         if (Instant.now().isAfter(sr.expiresAt)) {
@@ -110,37 +126,48 @@ public class AccountManager {
         return Optional.of(sr.userId);
     }
 
-    /** Revokes a single session.
+    /**
+     * Revokes a single session.
+     *
      * @param sessionId
-     * @throws java.lang.Exception */
+     * @throws java.lang.Exception
+     */
     public void logout(String sessionId) throws Exception {
         store.deleteSession(sessionId);
     }
 
-    /** Revokes all sessions for a user (force logout everywhere).
+    /**
+     * Revokes all sessions for a user (force logout everywhere).
+     *
      * @param userId
-     * @throws java.lang.Exception */
+     * @throws java.lang.Exception
+     */
     public void logoutAll(String userId) throws Exception {
         store.deleteSessionsForUser(userId);
     }
 
-    /** Changes password after verifying the old one; revokes all sessions.
+    /**
+     * Changes password after verifying the old one; revokes all sessions.
+     *
      * @param user
      * @param oldPassword
      * @param newPassword
-     * @throws java.lang.Exception */
+     * @throws java.lang.Exception
+     */
     public void changePassword(User user, String oldPassword, String newPassword) throws Exception {
         if (!verifyPassword(oldPassword.toCharArray(), user)) {
             throw new IllegalArgumentException("INVALID_CREDENTIALS");
         }
         changePassword(user, newPassword);
     }
-    
-    
-    /** Changes password WITHOUT verifying the old one; revokes all sessions.
+
+    /**
+     * Changes password WITHOUT verifying the old one; revokes all sessions.
+     *
      * @param user
      * @param newPassword
-     * @throws java.lang.Exception */
+     * @throws java.lang.Exception
+     */
     public void changePassword(User user, String newPassword) throws Exception {
 
         byte[] newSalt = randomBytes(SALT_BYTES);
@@ -156,13 +183,16 @@ public class AccountManager {
         store.updateUser(user);
         store.deleteSessionsForUser(user.id); // rotate sessions after password change
     }
-    
+
 
     /* ===== Helpers ===== */
-
     private static class HashOut {
+
         final byte[] dk;
-        HashOut(byte[] dk) { this.dk = dk; }
+
+        HashOut(byte[] dk) {
+            this.dk = dk;
+        }
     }
 
     private static HashOut hashPassword(char[] password, byte[] salt, int iterations, int keyLenBytes) throws Exception {
@@ -191,12 +221,11 @@ public class AccountManager {
         RNG.nextBytes(b);
         return b;
     }
-    
-    
+
     public User getUserById(String userId) throws Exception {
         return store.findUserById(userId).orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
     }
-    
+
     public PageableUsers getUsersByPage(int page) {
         return store.getUsersByPage(page);
     }
@@ -204,5 +233,5 @@ public class AccountManager {
     public AuthDataStore getStore() {
         return store;
     }
-   
+
 }

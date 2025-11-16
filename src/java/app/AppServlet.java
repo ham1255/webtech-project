@@ -9,6 +9,11 @@ import auth.AccountManagerServiceProvider;
 import auth.AuthDataStore.PageableUsers;
 import auth.User;
 import auth.User.Role;
+import election.studentcouncil.Candidate;
+import election.Election;
+import election.ElectionDataStore;
+import election.ElectionEntity;
+import election.ElectionServiceProvider;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -18,8 +23,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,7 +45,10 @@ import java.util.stream.Collectors;
 public class AppServlet extends HttpServlet {
 
     @Inject
-    private AccountManagerServiceProvider provider;
+    private AccountManagerServiceProvider accountProvider;
+
+    @Inject
+    private ElectionServiceProvider electionProvider;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -47,7 +57,8 @@ public class AppServlet extends HttpServlet {
         var session = request.getSession(false);
 
         String sid = (String) session.getAttribute("sessionId");
-        AccountManager am = provider.getAccountManager();
+        AccountManager am = accountProvider.getAccountManager();
+        ElectionDataStore es = electionProvider.getElectionDataStore();
 
         String vistorUserId = null;
         try {
@@ -72,7 +83,28 @@ public class AppServlet extends HttpServlet {
                     if (!vistor.roles.contains(User.Role.STUDENT)) {
                         request.getRequestDispatcher("/app/access_denied.jsp").forward(request, response);
                     } else {
-                        request.getRequestDispatcher("/app/voting.jsp").forward(request, response);
+                        String appMode = request.getParameter("appMode");
+                        if (appMode == null || appMode.isEmpty() || appMode.equals("election-select")) {
+                            request.setAttribute("appMode", "election-select");
+                            request.setAttribute("elections", es.findActiveElections());
+                            request.getRequestDispatcher("/app/voting.jsp").forward(request, response);
+                        } else if (appMode.equals("election-json-votes")) {
+                            String electionId = request.getParameter("electionId");
+                            if (electionId == null || electionId.isEmpty() || es.findElectionById(electionId).isEmpty()) {
+                                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Election doesn't exists");
+                            } else {
+                                Election election = es.findElectionById(electionId).get();
+                                int votes = es.getTotalVotes(election);
+                                String electionVotes = """
+                                    {
+                                        "votes":%votes%
+                                    }
+                                """;
+                                electionVotes = electionVotes.replace("%votes%", String.valueOf(votes));
+                                response.setContentType("application/json");
+                                response.getWriter().write(electionVotes);
+                            }
+                        }
                     }
 
                 }
@@ -120,8 +152,10 @@ public class AppServlet extends HttpServlet {
                     }
                 }
 
-                default ->
+                default -> {
                     request.getRequestDispatcher("/app/home.jsp").forward(request, response);
+
+                }
             }
 
         } catch (Exception ex) {
@@ -136,8 +170,8 @@ public class AppServlet extends HttpServlet {
         var session = request.getSession(false);
 
         String sid = (String) session.getAttribute("sessionId");
-        AccountManager am = provider.getAccountManager();
-
+        AccountManager am = accountProvider.getAccountManager();
+        ElectionDataStore es = electionProvider.getElectionDataStore();
         String vistorUserId = null;
         try {
             vistorUserId = am.validateSession(sid).orElseThrow(() -> new IllegalArgumentException("INVAILD_SESSION"));
@@ -152,6 +186,7 @@ public class AppServlet extends HttpServlet {
 
             String servletPath = request.getServletPath();
             String ctx = request.getContextPath();
+
             switch (servletPath) {
                 case "/app/admin" -> {
                     if (!vistor.roles.contains(User.Role.ADMIN)) {
@@ -162,29 +197,56 @@ public class AppServlet extends HttpServlet {
                         if ("update_user".equals(operation)) {
                             String userId = request.getParameter("user-id");
                             User user = am.getUserById(userId);
-                            
+
                             user.fullName = request.getParameter("full-name");
                             user.email = request.getParameter("email");
 
                             String[] selectedRoles = request.getParameterValues("roles");
-                            
-                            if (selectedRoles == null) selectedRoles = new String[]{};
-                               
+
+                            if (selectedRoles == null) {
+                                selectedRoles = new String[]{};
+                            }
+
                             Set<Role> newRoleSet = new HashSet<>();
                             if (selectedRoles != null) {
                                 newRoleSet = Arrays.stream(selectedRoles)
                                         .map(User.Role::valueOf)
                                         .collect(Collectors.toSet());
                             }
-                            user.roles = newRoleSet;
-                            
-                            am.getStore().updateUser(user);
+                            // check if user in a active election.
+                            boolean inElection = false;
+ 
+                            outerLoop:
+                            for (Election election : es.findActiveElections()) {
+                               for (ElectionEntity entity : es.findEntitiesByElection(election)) {
+                                   if (entity instanceof Candidate candidate)
+                                   if (candidate.getUserID().equals(user.id)) {
+                                       inElection = true;
+                                       break outerLoop;
+                                   }
+                               }
+                                
+                            }
+                            if (inElection && !newRoleSet.contains(Role.CANDIDATE)) {
 
-                            response.sendRedirect(buildRedirect(ctx, "/app/admin",
-                                    Map.of("alert-message", "User updated succesfully!",
-                                            "appMode", "edit-user",
-                                            "edit-who", userId
-                                    )));
+                                response.sendRedirect(buildRedirect(ctx, "/app/admin",
+                                        Map.of("alert-message", "User currently in a election(s). We can't remove the role: Candidate",
+                                                "appMode", "edit-user",
+                                                "edit-who", userId
+                                        )));
+                            } else {
+
+                                user.roles = newRoleSet;
+
+                                am.getStore().updateUser(user);
+
+                                response.sendRedirect(buildRedirect(ctx, "/app/admin",
+                                        Map.of("alert-message", "User updated succesfully!",
+                                                "appMode", "edit-user",
+                                                "edit-who", userId
+                                        )));
+
+                            }
 
                         } else {
                             response.sendRedirect(buildRedirect(ctx, "/app/admin",

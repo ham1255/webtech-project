@@ -4,6 +4,7 @@
     Author     : mohammed
 --%>
 
+<%@page import="election.*"%>
 <%@page import="auth.User"%>
 <%@page import="auth.User.Role"%>
 <%@page import="java.util.Set"%>
@@ -248,7 +249,10 @@
                 %>
             </div>
         </div>
+        
 
+            
+          
 
         <% }
             if (appMode.equals("edit-user")) { %>
