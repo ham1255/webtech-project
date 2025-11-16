@@ -155,12 +155,12 @@
 
         <div class="container">
 
-            <h1>Available Elections</h1>
+            <h1>Available Elections & Polls</h1>
 
             <%
                 if (elections == null || elections.isEmpty()) {
             %>
-            <div class="no-elections">There are no elections at the moment.</div>
+            <div class="no-elections">There are no elections & polls at the moment.</div>
 
             <%
             } else {

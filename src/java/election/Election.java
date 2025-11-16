@@ -21,7 +21,7 @@ public class Election {
     
     
     public static enum ElectionType {
-        STUDENT_COUNCIL, CUSTOM;
+        STUDENT_COUNCIL, POLL;
     
     }
 

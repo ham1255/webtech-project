@@ -16,6 +16,7 @@ import java.util.*;
 
 public class MySqlAuthDataStore implements AuthDataStore {
 
+    // TABLES NEEDED
     /*
     CREATE TABLE users (
     id               VARCHAR(64)   PRIMARY KEY,

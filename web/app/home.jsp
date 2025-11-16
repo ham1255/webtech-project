@@ -95,7 +95,7 @@
         %>
         <div class="wrapper">
 
-            <h1>Welcome to the Student Council Elections</h1>
+            <h1>Welcome to the Student E-voting Portal</h1>
             <p>Your voice matters — participate and shape your future.</p>
 
             <form method="get" action="<%= ctx%>/app/voting">
@@ -111,7 +111,7 @@
             </div>
 
             <div class="creators">
-                Created by Mohammed & Team – 2025
+                Created by Ahmad ashraf Tarawneh, Abdijabar Ahmed Mohamed, Omar Abdulnasser Talal Haneyeh, Mohammed jasem alteneiji, Omar Magd Juratly – 2025
             </div>
 
         </div>

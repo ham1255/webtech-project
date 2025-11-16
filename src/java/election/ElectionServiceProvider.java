@@ -4,7 +4,7 @@
  */
 package election;
 
-import election.datastoreimpl.MemoryElectionDataStore;
+import election.datastoreimpl.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ public class ElectionServiceProvider {
     
     @PostConstruct
     public void init() {
-        electionDataStore = new MemoryElectionDataStore();
+        electionDataStore = new EmptyElectionDataStore();
         LocalDateTime preStartsAt = LocalDateTime.now(); 
         LocalDateTime startsAt = preStartsAt.plusMinutes(1);
         LocalDateTime endsAt = startsAt.plusMinutes(1);
