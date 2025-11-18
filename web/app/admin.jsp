@@ -165,24 +165,6 @@
         }
     </style>
     <body>
-        <% String alertMessage = (String) request.getParameter("alert-message");%>
-        <%
-            if (alertMessage != null) {
-        %>
-        <script>
-            alert("<%= alertMessage%>");
-
-            if (window.history.replaceState) {
-                const url = new URL(window.location);
-                url.searchParams.delete('alert-message');
-                window.history.replaceState({}, document.title, url.pathname + url.search);
-            }
-
-        </script>
-        <%
-            }
-        %>
-
         <jsp:include page="/app/navbar.jsp"/>
         <h1>Debug: admin app mode: <%= appMode%></h1>
 

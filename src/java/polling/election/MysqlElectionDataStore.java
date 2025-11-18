@@ -39,15 +39,21 @@ CREATE TABLE candidates (
 
 -- VOTES (one vote per voter per election)
 CREATE TABLE votes (
-    election_id VARCHAR(64) NOT NULL,
-    voter_id VARCHAR(64) NOT NULL,
+    election_id       VARCHAR(64) NOT NULL,
+    voter_id          VARCHAR(64) NOT NULL,
+    chair_name        VARCHAR(255) NOT NULL,
     candidate_user_id VARCHAR(64) NOT NULL,
-    PRIMARY KEY (election_id, voter_id),
-    FOREIGN KEY (election_id) REFERENCES elections(election_id) ON DELETE CASCADE,
-    FOREIGN KEY (voter_id) REFERENCES users(id) ON DELETE CASCADE,
+
+    -- One vote per election + voter + chair
+    PRIMARY KEY (election_id, voter_id, chair_name),
+
+    -- Make sure candidate actually belongs to that election
     FOREIGN KEY (election_id, candidate_user_id)
         REFERENCES candidates(election_id, user_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (election_id) REFERENCES elections(election_id) ON DELETE CASCADE,
+    FOREIGN KEY (voter_id)    REFERENCES users(id)             ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
     
@@ -407,19 +413,21 @@ CREATE TABLE votes (
     @Override
     public void addVoteToCandidate(Election election, User voter, Candidate candidate) {
         final String sql = "INSERT INTO votes "
-                + "(election_id, voter_id, candidate_user_id) VALUES (?, ?, ?)";
+                + "(election_id, voter_id, chair_name, candidate_user_id) "
+                + "VALUES (?, ?, ?, ?)";
 
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, election.getElectionId());
-            ps.setString(2, voter.id); // userID from User class
-            ps.setString(3, candidate.getUserID());
+            ps.setString(2, voter.id); // from your User class
+            ps.setString(3, candidate.getChair().getDisplayName());
+            ps.setString(4, candidate.getUserID());
 
             ps.executeUpdate();
 
         } catch (SQLIntegrityConstraintViolationException e) {
-            // This typically means the voter already voted in this election
-            throw new IllegalStateException("VOTER_ALREADY_VOTED", e);
+            // This means the student already voted for this chair in this election
+            throw new IllegalStateException("ALREADY_VOTED_FOR_CHAIR", e);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to add vote for candidate "
                     + candidate.getUserID() + " in election " + election.getElectionId(), e);
@@ -463,6 +471,27 @@ CREATE TABLE votes (
         } catch (SQLException e) {
             throw new RuntimeException("Failed to count total votes for election "
                     + election.getElectionId(), e);
+        }
+    }
+
+    @Override
+    public boolean hasUserVoted(Election election, User voter) {
+        final String sql = "SELECT 1 FROM votes "
+                + "WHERE election_id = ? AND voter_id = ? "
+                + "LIMIT 1";
+
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, election.getElectionId());
+            ps.setString(2, voter.id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to check votes for user "
+                    + voter.id + " in election " + election.getElectionId(), e);
         }
     }
 

@@ -230,8 +230,11 @@
                             .then(res => res.json())
                             .then(data => {
                                 electionVotes = data.votes;
-                            });
+                                if (now >= start && now < end) {
+                                    votes.textContent = "Votes (LIVE): " + electionVotes;
+                                }
 
+                            });
 
                     if (voteForm) {
                         if (now > start && now < end) {
@@ -253,11 +256,11 @@
                     } else if (now >= start && now < end) {
                         timer.textContent = "Election ends in: " + format(end - now);
                         status.textContent = "";
-                        votes.textContent = "Votes (LIVE): " + electionVotes;
+
                     } else {
                         timer.textContent = "Election finished.";
                         status.textContent = now + "<" + registerationStart;
-                        votes.textContent = "Votes: " + electionVotes;
+                        votes.textContent = "";
                     }
                 });
             }
@@ -299,7 +302,9 @@
         <div class="container">
             <div class="election-box"> 
 
-                <form method="post" action="<%=ctx%>/app" class="vote-form">
+                <form method="post" action="<%=ctx%>/app/voting" class="vote-form">
+                    <input type="hidden" name="electionId" value="<%= election.getElectionId()%>">
+                    <input type="hidden" name="operation" value="vote">
                     <% for (Map.Entry<StudentCouncilElectionChair, List<Candidate>> entry : candidatesByChair.entrySet()) {
                             StudentCouncilElectionChair chair = entry.getKey();
                             List<Candidate> candidates = entry.getValue();
@@ -307,7 +312,7 @@
 
                     <label><strong><%= chair.getDisplayName()%> Candidates:</strong></label><br><br>
 
-                    <select name="<%= chair.toString()%>" class="select-box">
+                    <select name="<%= chair%>" class="select-box">
                         <% for (Candidate c : candidates) {%>
                         <option value="<%= c.getUserID()%>"> <%= c.getUserID()%>: <%= c.getName()%></option>
                         <% } %>

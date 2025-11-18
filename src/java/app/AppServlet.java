@@ -27,11 +27,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,7 +78,7 @@ public class AppServlet extends HttpServlet {
             request.setAttribute("name", vistor.fullName);
             request.setAttribute("id", vistor.id);
             request.setAttribute("roles", vistor.roles);
-
+            String ctx = request.getContextPath();
             String servletPath = request.getServletPath();
 
             switch (servletPath) {
@@ -136,7 +136,15 @@ public class AppServlet extends HttpServlet {
                             String electionId = request.getParameter("electionId");;
                             request.setAttribute("appMode", "election-vote");
                             Election election = es.findElectionById(electionId).get();
-
+                            
+                            
+                            if (es.hasUserVoted(election, vistor)) {
+                            
+                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
+                                            Map.of("alert-message", "You have already voted in this election"
+                                            )));
+                             return;
+                            }
                             List<Candidate> candidates = es.findCandidatesByElection(election);
 
                             Map<StudentCouncilElectionChair, List<Candidate>> candidatesByChair = new LinkedHashMap<>();
@@ -262,10 +270,8 @@ public class AppServlet extends HttpServlet {
                     } else {
 
                         String operation = request.getParameter("operation");
-                        System.out.println(operation);
                         switch (operation) {
                             case "update_user" -> {
-                                System.out.println("called");
                                 String userId = request.getParameter("user-id");
                                 User user = am.getUserById(userId);
 
@@ -321,7 +327,6 @@ public class AppServlet extends HttpServlet {
                             }
                             case "create-election" -> {
 
-                                System.out.println("called");
                                 String name = request.getParameter("name");
                                 String regStartStr = request.getParameter("registrationStartsAt");
                                 String startStr = request.getParameter("startsAt");
@@ -380,7 +385,34 @@ public class AppServlet extends HttpServlet {
 
                     }
                 }
-
+                case "/app/voting" -> {
+                    if (!vistor.roles.contains(User.Role.STUDENT)) {
+                        response.sendError(403, "Access denied");
+                    } else {
+                        String operation = request.getParameter("operation");
+                        if (operation.equals("vote")) {
+                            User voter = vistor;
+                            String electionId = request.getParameter("electionId");
+                            Election election = es.findElectionById(electionId).get();
+                            if (es.hasUserVoted(election, voter)) {
+                            
+                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
+                                            Map.of("alert-message", "You have already voted in this election"
+                                            )));
+                             return;
+                            }
+                            Map<StudentCouncilElectionChair, String> votes = new HashMap<>();
+                            for (StudentCouncilElectionChair chair : StudentCouncilElectionChair.values()) {
+                                 String candidateId = request.getParameter(chair.toString());
+                                 Candidate candidate = es.findCandidateById(election, candidateId).get();
+                                 es.addVoteToCandidate(election, voter, candidate);
+                            }
+                            response.sendRedirect(buildRedirect(ctx, "/app/voting",
+                                        Map.of("alert-message", "You have voted successfully"  
+                                        )));
+                        }
+                    }
+                }
                 default ->
                     response.sendRedirect("/app");
             }

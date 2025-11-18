@@ -60,6 +60,8 @@ public interface ElectionDataStore {
     int getVotesForCandidate(Election election, Candidate candidate);
 
     int getTotalVotes(Election election);
+    
+    boolean hasUserVoted(Election election, User voter);
 
     Optional<Candidate> findCandidateById(Election election, String candidateId);
 
