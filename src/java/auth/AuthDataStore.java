@@ -4,6 +4,7 @@
  */
 package auth;
 
+import database.Pageable;
 import java.util.Optional;
 import java.util.Set;
 
@@ -13,31 +14,16 @@ import java.util.Set;
  */
 public interface AuthDataStore {
     
-    public static class PageableUsers {
-        public static final int MAX_PAGE_SIZE = 10;
-        private final Set<User> users;
-        private final int maxPages;
-        private final int currentPage;
+    public static class PageableUsers extends Pageable<User> {
 
         public PageableUsers(Set<User> users, int maxPages, int currentPage) {
-            this.users = users;
-            this.maxPages = maxPages;
-            this.currentPage = currentPage;
+            super(users, maxPages, currentPage);
         }
-
+        
         public Set<User> getUsers() {
-            return users;
+            return getT();
         }
 
-        public int getMaxPages() {
-            return maxPages;
-        }
-
-        public int getCurrentPage() {
-            return currentPage;
-        }
-        
-        
     }
     
      // Users

@@ -5,6 +5,8 @@
 package auth.datastoreimpls;
 
 import auth.*;
+import database.MysqlProvider;
+import jakarta.inject.Inject;
 
 /**
  *
@@ -50,27 +52,24 @@ public class MySqlAuthDataStore implements AuthDataStore {
     */
     
     
-    private final String jdbcUrl;
-    private final String jdbcUser;
-    private final String jdbcPassword;
+    //private final String jdbcUrl;
+    //private final String jdbcUser;
+    //private final String jdbcPassword;
 
-    public MySqlAuthDataStore(String jdbcUrl, String jdbcUser, String jdbcPassword) {
-        this.jdbcUrl = jdbcUrl;
-        this.jdbcUser = jdbcUser;
-        this.jdbcPassword = jdbcPassword;
+    
+    public MySqlAuthDataStore() {
 
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver"); // NetBeans MySQL driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("MySQL JDBC driver not found", e);
         }
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
+        return DriverManager.getConnection(MysqlProvider.URL, MysqlProvider.USERNAME, MysqlProvider.PASSWORD);
     }
 
-    // ===================== USERS =====================
     @Override
     public void createUser(User user) throws Exception {
         final String insertUserSql
@@ -274,7 +273,6 @@ public class MySqlAuthDataStore implements AuthDataStore {
         }
     }
 
-    // ===================== HELPERS =====================
     private User mapUser(Connection con, ResultSet rs) throws SQLException {
         String id = rs.getString("id");
         String fullName = rs.getString("full_name");
@@ -313,8 +311,6 @@ public class MySqlAuthDataStore implements AuthDataStore {
         return roles;
     }
 
-    // ===================== SESSIONS =====================
-    // (Your existing session code can stay as before; only user mapping changed)
     @Override
     public void createSession(Session session) throws Exception {
         final String sql = "INSERT INTO sessions (id, user_id, created_at, expires_at) "
@@ -380,7 +376,6 @@ public class MySqlAuthDataStore implements AuthDataStore {
         }
     }
 
-// ===================== SESSION MAPPER =====================
     private Session mapSession(ResultSet rs) throws SQLException {
         String id = rs.getString("id");
         String userId = rs.getString("user_id");

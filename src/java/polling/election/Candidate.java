@@ -2,22 +2,20 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package election.studentcouncil;
+package polling.election;
 
-import election.ElectionEntity;
-import election.ElectionEntity;
-import election.studentcouncil.StudentCouncilElectionChair;
-import java.util.Map;
+import jakarta.annotation.Nullable;
 
 /**
  *
  * @author mohammed
  */
-public class Candidate implements ElectionEntity {
+public class Candidate {
 
     private final String userID;
     private final StudentCouncilElectionChair chair;
     private final String electionID;
+    private String name;
 
     public Candidate(String userID, StudentCouncilElectionChair chair, String electionID) {
         this.userID = userID;
@@ -37,14 +35,15 @@ public class Candidate implements ElectionEntity {
         return electionID;
     }
 
-    @Override
-    public String getID() {
-        return userID;
+    @Nullable
+    public String getName() {
+        return name;
     }
 
-    @Override
-    public Map<String, Object> getData() {
-        return Map.of("user-id", userID, "chair", chair, "election-id", electionID);
+    public void setName(String name) {
+        this.name = name;
     }
+    
+    
 
 }

@@ -2,12 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package election;
+package polling.election;
 
-import election.datastoreimpl.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.time.LocalDateTime;
 
 
 /**
@@ -22,11 +20,13 @@ public class ElectionServiceProvider {
     
     @PostConstruct
     public void init() {
-        electionDataStore = new EmptyElectionDataStore();
-        LocalDateTime preStartsAt = LocalDateTime.now(); 
-        LocalDateTime startsAt = preStartsAt.plusMinutes(1);
-        LocalDateTime endsAt = startsAt.plusMinutes(1);
+        electionDataStore = new MysqlElectionDataStore();
+        //LocalDateTime preStartsAt = LocalDateTime.now(); 
+        //LocalDateTime startsAt = preStartsAt.plusMinutes(1);
+        //LocalDateTime endsAt = startsAt.plusMinutes(1);
         //electionDataStore.createElection("Student Council election",preStartsAt,startsAt,endsAt);
+        
+        
     }
 
     public ElectionDataStore getElectionDataStore() {

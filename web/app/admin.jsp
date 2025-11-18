@@ -4,7 +4,9 @@
     Author     : mohammed
 --%>
 
-<%@page import="election.*"%>
+<%@page import="java.time.format.DateTimeFormatter"%>
+<%@page import="polling.election.ElectionDataStore.PageableElections"%>
+<%@page import="polling.election.*"%>
 <%@page import="auth.User"%>
 <%@page import="auth.User.Role"%>
 <%@page import="java.util.Set"%>
@@ -12,7 +14,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <% String ctx = request.getContextPath();%>
 <% String appMode = (String) request.getAttribute("appMode");%>
-
+<% DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");%>
 
 <!DOCTYPE html>
 <html>
@@ -148,6 +150,19 @@
             background: rgba(255, 255, 255, 0.25);
         }
 
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+
+            font-size: 15px;
+
+            background: #fff;
+            transition: 0.25s ease;
+            box-sizing: border-box;
+        }
     </style>
     <body>
         <% String alertMessage = (String) request.getParameter("alert-message");%>
@@ -155,45 +170,53 @@
             if (alertMessage != null) {
         %>
         <script>
-        alert("<%= alertMessage%>");
-        
-         if (window.history.replaceState) {
-            const url = new URL(window.location);
-            url.searchParams.delete('alert-message');
-            window.history.replaceState({}, document.title, url.pathname + url.search);
-        }
-        
+            alert("<%= alertMessage%>");
+
+            if (window.history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.delete('alert-message');
+                window.history.replaceState({}, document.title, url.pathname + url.search);
+            }
+
         </script>
         <%
             }
         %>
-        
-        <jsp:include page="/app/navbar.jsp"/>
 
-        <% if (!appMode.equals("main")) {%>
-        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/admin" class="page-btn">Go back</a>
+        <jsp:include page="/app/navbar.jsp"/>
+        <h1>Debug: admin app mode: <%= appMode%></h1>
+
+        <% if (appMode.equals("users") || appMode.equals("elections")) {%>
+        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/admin?appMode=users" class="page-btn">Edit users</a>
+        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/admin?appMode=elections" class="page-btn">Edit elections</a>
         <% }%>
 
-        <h1>Debug: admin app mode: <%= appMode%></h1>
-        <% if (appMode.equals("main")) {%>
+
+        <% if (appMode.equals("edit-user")) {%>
+        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/admin?appMode=users" class="page-btn">Go back</a>
+        <% }%>
+        <% if (appMode.equals("edit-election") || appMode.equals("create-election")) {%>
+        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/admin?appMode=elections" class="page-btn">Go back</a>
+        <% }%>
 
 
-        <%
-            PageableUsers pageData = (PageableUsers) request.getAttribute("usersPageData");
-
-            if (pageData == null) {
-                out.println("<p style='color:red;text-align:center;'>No users found or page data not provided.</p>");
-                return;
-            }
-
-            Set<User> users = pageData.getUsers();
-            int currentPage = pageData.getCurrentPage();
-            int maxPages = pageData.getMaxPages();
-        %>
+        <% if (appMode.equals("users")) {%>
 
 
 
         <div class="container">
+            <%
+                PageableUsers pageData = (PageableUsers) request.getAttribute("usersPageData");
+
+                if (pageData == null) {
+                    out.println("<p style='color:red;text-align:center;'>No users found or page data not provided.</p>");
+                    return;
+                }
+
+                Set<User> users = pageData.getUsers();
+                int currentPage = pageData.getCurrentPage();
+                int maxPages = pageData.getMaxPages();
+            %>
             <h2>Users List</h2>
 
             <table class="user-table">
@@ -239,7 +262,7 @@
                 <%
                     }
                 %>
-                <span>Page <%= currentPage%> of <%= maxPages%></span>
+                <span>Page <%= currentPage%> of <%= maxPages > 1 ? maxPages : 1%></span>
                 <%
                     if (currentPage < maxPages) {
                 %>
@@ -249,13 +272,12 @@
                 %>
             </div>
         </div>
-        
 
-            
-          
 
-        <% }
-            if (appMode.equals("edit-user")) { %>
+
+
+
+        <% } else if (appMode.equals("edit-user")) { %>
 
         <% User user = (User) request.getAttribute("edit-who");%>
 
@@ -295,7 +317,165 @@
 
 
         </div>
+        <% } else if (appMode.equals("elections")) {%>
+
+
+        <div class="container">
+            <%
+                PageableElections pageData = (PageableElections) request.getAttribute("electionsPageData");
+
+                if (pageData == null) {
+                    out.println("<p style='color:red;text-align:center;'>No elections were found. or page data not provided.</p>");
+                    return;
+                }
+
+                Set<Election> elections = pageData.getElections();
+                int currentPage = pageData.getCurrentPage();
+                int maxPages = pageData.getMaxPages();
+            %>
+            <h2>Election List</h2> 
+            <p><a href="<%= ctx%>/app/admin?appMode=create-election" class="page-btn">Create election</a><p>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Election ID</th>
+                        <th>Name</th>
+                        <th></th>
+                        <th></th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    <%  if (elections != null && !elections.isEmpty()) {
+                            for (Election election : elections) {
+                    %>
+                    <tr>
+                        <td><%= election.getElectionId()%></td>
+                        <td><%= election.getName()%></td>
+                        <td><a href="<%= ctx%>/app/admin?appMode=edit-election&edit-who=<%= election.getElectionId()%>" class="page-btn">edit</a></td>
+                        <td></td>
+                    </tr>
+                    <%
+                        }
+                    } else {
+                    %>
+                    <tr><td colspan="4" style="text-align:center;">No elections available.</td></tr>
+                    <%
+                        }
+                    %>
+                </tbody>
+            </table>
+
+
+
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <%            if (currentPage > 1) {
+                %>
+                <a href="<%= ctx%>/app/admin?appMode=elections&electionsPage=<%= currentPage - 1%>" class="page-btn">Previous</a>
+                <%
+                    }
+                %>
+                <span>Page <%= currentPage%> of <%= maxPages > 1 ? maxPages : 1%></span>
+                <%
+                    if (currentPage < maxPages) {
+                %>
+                <a href="<%= ctx%>/app/admin?appMode=elections&electionsPage=<%= currentPage + 1%>" class="page-btn">Next</a>
+                <%
+                    }
+                %>
+            </div>
+        </div>
+
+
+
+
+        <% } else if (appMode.equals("create-election")) {%>
+
+        <div class="container">
+            <form custom-type="electionForm" action="<%=ctx%>/app/admin" method="post" class="update-form">
+                <input type="hidden" name="operation" value="create-election">
+                <label>Election Name:</label>
+                <input type="text" name="name" required>
+
+                <label>Registration Starts At:</label>
+                <input type="datetime-local" name="registrationStartsAt" id="registrationStartsAt" required>
+
+                <label>Starts At:</label>
+                <input type="datetime-local" name="startsAt" id="startsAt" required>
+
+                <label>Ends At:</label>
+                <input type="datetime-local" name="endsAt" id="endsAt" required>
+
+                <input type="submit" value="Create election">
+            </form>
+        </div>
+
+        <% } else if (appMode.equals("edit-election")) {%>
+
+        <div class="container">
+            <form custom-type="electionForm" action="<%=ctx%>/app/admin" method="post" class="update-form">
+                <% Election election = (Election) request.getAttribute("edit-who");%>
+
+                <input type="hidden" name="operation" value="update-election">
+                <input type="hidden" name="election-id" value="<%=election.getElectionId()%>">
+
+                <label>Election ID: <%=election.getElectionId()%></label>
+
+                <label>Election Name:</label>
+                <input type="text" name="name" value="<%= election.getName()%>" required>
+
+                <label>Registration Starts At:</label>
+                <input type="datetime-local" name="registrationStartsAt" id="registrationStartsAt" value="<%= election.registerationStartsAt().format(dtf)%>" required>
+
+                <label>Starts At:</label>
+                <input type="datetime-local" name="startsAt" id="startsAt" value="<%= election.getStartsAt().format(dtf)%>" required>
+
+                <label>Ends At:</label>
+                <input type="datetime-local" name="endsAt" id="endsAt" value="<%= election.getEndsAt().format(dtf)%>" required>
+
+                <input type="submit" value="Update election">
+            </form>
+        </div>
+
+
         <% }%>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+
+                // find ALL forms that want election validation
+                const electionForms = document.querySelectorAll("form[custom-type='electionForm']");
+
+                electionForms.forEach(form => {
+
+                    form.addEventListener("submit", function (e) {
+
+                        const reg = new Date(form.querySelector("[name='registrationStartsAt']").value);
+                        const start = new Date(form.querySelector("[name='startsAt']").value);
+                        const end = new Date(form.querySelector("[name='endsAt']").value);
+
+                        // Validate: registration < start
+                        if (reg >= start) {
+                            e.preventDefault();
+                            alert("Registration start time must be BEFORE the election start time.");
+                            return false;
+                        }
+
+                        // Validate: start < end
+                        if (start >= end) {
+                            e.preventDefault();
+                            alert("Election start time must be BEFORE the election end time.");
+                            return false;
+                        }
+
+                    });
+
+                });
+
+            });
+        </script>
 
     </body>
 </html>

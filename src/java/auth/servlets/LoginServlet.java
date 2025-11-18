@@ -28,14 +28,16 @@ public class LoginServlet extends HttpServlet {
    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String username = request.getParameter("username");
+        String email = request.getParameter("email");
         String password = request.getParameter("password");
 
         AccountManager am = serviceProvider.getAccountManager();
         if (am == null) {
-        throw new RuntimeException("idk null?????");}
+            throw new RuntimeException("idk null?????");
+        
+        }
         try {
-            String sessionId = am.login(username, password);
+            String sessionId = am.login(email, password);
 
             // store sessionId in servlet session or cookie
             HttpSession httpSession = request.getSession(true);
@@ -44,7 +46,7 @@ public class LoginServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() +"/app");
         } catch (Exception e) {
             request.setAttribute("wrongPassword", "1");
-            request.setAttribute("username", username);
+            request.setAttribute("email", email);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
         }
     }
