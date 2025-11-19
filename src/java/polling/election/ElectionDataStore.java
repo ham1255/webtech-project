@@ -8,6 +8,7 @@ import auth.User;
 import database.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -58,6 +59,8 @@ public interface ElectionDataStore {
     void addVoteToCandidate(Election election, User voter, Candidate candidate);
 
     int getVotesForCandidate(Election election, Candidate candidate);
+    
+    Map<StudentCouncilElectionChair, Map<String, Integer>> getCandidatesVotesPerChair(Election election);
 
     int getTotalVotes(Election election);
     

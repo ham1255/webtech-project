@@ -6,6 +6,7 @@ package polling.election;
 
 import auth.User;
 import database.MysqlProvider;
+import static database.MysqlProvider.getConnection;
 import database.Pageable;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -59,19 +60,6 @@ CREATE TABLE votes (
     
     
      */
-    public MysqlElectionDataStore() {
-        try {
-            // MySQL driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("MySQL JDBC driver not found", e);
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(MysqlProvider.URL, MysqlProvider.USERNAME, MysqlProvider.PASSWORD);
-    }
-
     @Override
     public Election createElection(String name,
             LocalDateTime preStartsAt,
@@ -420,7 +408,7 @@ CREATE TABLE votes (
 
             ps.setString(1, election.getElectionId());
             ps.setString(2, voter.id); // from your User class
-            ps.setString(3, candidate.getChair().getDisplayName());
+            ps.setString(3, candidate.getChair().toString());
             ps.setString(4, candidate.getUserID());
 
             ps.executeUpdate();
@@ -457,7 +445,7 @@ CREATE TABLE votes (
 
     @Override
     public int getTotalVotes(Election election) {
-        final String sql = "SELECT COUNT(*) FROM votes WHERE election_id = ?";
+        final String sql = "SELECT COUNT(DISTINCT voter_id) FROM votes WHERE election_id = ?";
 
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -493,6 +481,46 @@ CREATE TABLE votes (
             throw new RuntimeException("Failed to check votes for user "
                     + voter.id + " in election " + election.getElectionId(), e);
         }
+    }
+
+    @Override
+    public Map<StudentCouncilElectionChair, Map<String, Integer>> getCandidatesVotesPerChair(Election election) {
+        final String sql
+                = "SELECT chair_name, candidate_user_id, COUNT(*) AS votes "
+                + "FROM votes "
+                + "WHERE election_id = ? "
+                + "GROUP BY chair_name, candidate_user_id";
+
+        Map<StudentCouncilElectionChair, Map<String, Integer>> result = new LinkedHashMap<>();
+
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, election.getElectionId());
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    String chairName = rs.getString("chair_name");
+                    String candidateUserId = rs.getString("candidate_user_id");
+                    int votes = rs.getInt("votes");
+
+                    // Convert string to the actual chair object:
+                    StudentCouncilElectionChair chair = StudentCouncilElectionChair.valueOf(chairName);
+
+                    // Ensure map exists
+                    result.computeIfAbsent(chair, k -> new LinkedHashMap<>())
+                            .put(candidateUserId, votes);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Failed to get votes per chair for election " + election.getElectionId(), e
+            );
+        }
+
+        return result;
     }
 
 }

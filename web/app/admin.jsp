@@ -80,6 +80,23 @@
             transform: scale(1.05);
         }
 
+        .page-btn-red {
+            background: linear-gradient(135deg, #D62323, #BE4343); /* red gradient */
+            color: white;
+            padding: 8px 18px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+
+        .page-btn-red:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
 
         .update-form {
             display: flex;
@@ -335,7 +352,11 @@
                         <td><%= election.getElectionId()%></td>
                         <td><%= election.getName()%></td>
                         <td><a href="<%= ctx%>/app/admin?appMode=edit-election&edit-who=<%= election.getElectionId()%>" class="page-btn">edit</a></td>
-                        <td></td>
+                        <td> <form action="<%=ctx%>/app/admin" method="post">
+                                <input type="hidden" name="operation" value="delete-election">
+                                <input type="hidden" name="election-id" value="<%= election.getElectionId()%>">
+                                <input type="submit" value="Delete" class="page-btn-red">
+                            </form></td>
                     </tr>
                     <%
                         }

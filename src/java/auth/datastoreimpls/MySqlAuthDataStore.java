@@ -5,8 +5,7 @@
 package auth.datastoreimpls;
 
 import auth.*;
-import database.MysqlProvider;
-import jakarta.inject.Inject;
+import static database.MysqlProvider.getConnection;
 
 /**
  *
@@ -51,24 +50,6 @@ public class MySqlAuthDataStore implements AuthDataStore {
     
     */
     
-    
-    //private final String jdbcUrl;
-    //private final String jdbcUser;
-    //private final String jdbcPassword;
-
-    
-    public MySqlAuthDataStore() {
-
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("MySQL JDBC driver not found", e);
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(MysqlProvider.URL, MysqlProvider.USERNAME, MysqlProvider.PASSWORD);
-    }
 
     @Override
     public void createUser(User user) throws Exception {

@@ -82,7 +82,7 @@
 
         .election-box {
             width: 80%;
-            max-width: 650px;
+            max-width: 1250px;
             margin-bottom: 20px;
             padding: 25px;
             box-sizing: border-box;
@@ -120,12 +120,74 @@
             text-decoration: none;
             font-weight: 600;
             transition: all 0.2s ease;
+
+            border: none;              /* remove dark border */
+            outline: none;             /* remove focus outline */
+            box-shadow: none;
         }
 
         .page-btn:hover {
             background: rgba(255,255,255,0.25);
             transform: scale(1.05);
         }
+
+        .results-container {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: stretch;          /* make all blocks in a row same height */
+        }
+
+        .chair-block {
+            flex: 1 1 260px;               /* ⬅️ key: same base width for all boxes */
+            box-sizing: border-box;
+
+            background: #5C62D6;
+            border: 1px solid rgba(255,255,255,0.25);  /* softer border, not dark */
+            border-radius: 12px;
+            padding: 12px;
+            color: #e5e7eb;
+
+            display: flex;
+            flex-direction: column;        /* lets content stack nicely */
+            justify-content: flex-start;
+        }
+        .chair-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+        .chair-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+        .chair-list li {
+            margin-bottom: 3px;
+        }
+
+        .vote-item {
+            display: flex;
+            justify-content: space-between;   /* pushes name left and votes right */
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .vote-name {
+            flex: 1;                           /* long names won't push votes */
+            max-width: 70%;                    /* prevent too long names from eating space */
+            overflow: hidden;
+            text-overflow: ellipsis;           /* (…) if too long */
+            white-space: nowrap;
+        }
+
+        .vote-count {
+            width: 90px;                       /* fixed width keeps all aligned */
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+
     </style>
     <body>
         <jsp:include page="/app/navbar.jsp"/>
@@ -141,9 +203,7 @@
         <% if (appMode.equals("election-select")) { %>
 
         <div class="container">
-
-            <h1>Available Elections</h1>
-
+            
             <%
                 List<Election> elections = (List<Election>) request.getAttribute("elections");
 
@@ -173,13 +233,17 @@
                 <div class="timer">Calculating time…</div>
                 <div>
 
-
                 </div>
                 <form class="vote-form" method="get" action="<%= ctx%>/app/voting">
                     <input type="hidden" name="appMode" value="election-vote">
-                    <input type="hidden" name="electionId" value="<%= e.getElectionId()%>">
+                    <input type="hidden" name="electionId" value="<%= e.getElectionId()%>"><br>
                     <button class="page-btn">Vote now!</button>
                 </form>
+                 <br>
+                 <div id="showLive" class="name"></div>   
+                 <div id="results-container" class="results-container"></div>
+
+
             </div>
 
             <%
@@ -225,14 +289,78 @@
                     let timer = box.querySelector(".timer");
                     let status = box.querySelector(".status");
                     const voteForm = box.querySelector(".vote-form");
+                    let showLive = document.getElementById("showLive");
 
                     fetch(`<%=ctx%>/app/voting?appMode=election-json-votes&electionId=` + election)
                             .then(res => res.json())
                             .then(data => {
-                                electionVotes = data.votes;
+                                electionVotes = data.total_votes;
                                 if (now >= start && now < end) {
-                                    votes.textContent = "Votes (LIVE): " + electionVotes;
+                                    votes.textContent = "Total Votes (LIVE): " + electionVotes;
                                 }
+                                var names = data.names; // your names object from the response
+
+                                const resultsContainer = box.querySelector("#results-container");
+                                resultsContainer.innerHTML = ""; // clear old results
+                                const votesPerChair = data.votes || {};
+                                for (const chairName in votesPerChair) {
+
+                                    const chairBlock = document.createElement("div");
+                                    chairBlock.className = "chair-block";
+
+                                    const title = document.createElement("div");
+                                    title.className = "chair-title";
+                                    title.textContent = chairName + " Results";
+                                    chairBlock.appendChild(title);
+
+                                    const list = document.createElement("ol");
+                                    list.className = "chair-list";
+                                    const entries = Object.entries(votesPerChair[chairName])
+                                            .sort((a, b) => b[1] - a[1])
+                                            .slice(0, 10);
+
+
+
+                                    entries.forEach(function (entry) {
+                                        var candidateId = entry[0];
+                                        var count = entry[1];
+
+                                        // Read names from your response
+                                        var name = names[candidateId];
+
+                                        // If name exists → "Name (ID)"
+                                        // If not → just ID
+                                        var display = name ? (name + " (" + candidateId + ")") : candidateId;
+
+                                        // Create <li class="vote-item">
+                                        var li = document.createElement("li");
+                                        li.className = "vote-item";
+
+                                        // Create <span class="vote-name">
+                                        var nameSpan = document.createElement("span");
+                                        nameSpan.className = "vote-name";
+                                        nameSpan.textContent = display;
+
+                                        // Create <span class="vote-count">
+                                        var countSpan = document.createElement("span");
+                                        countSpan.className = "vote-count";
+                                        countSpan.textContent = count + " vote" + (count !== 1 ? "s" : "");
+
+                                        // Add children
+                                        li.appendChild(nameSpan);
+                                        li.appendChild(countSpan);
+
+                                        // Add to list
+                                        list.appendChild(li);
+                                    });
+
+                                    chairBlock.appendChild(list);
+                                    resultsContainer.appendChild(chairBlock);
+
+
+                                }
+
+
 
                             });
 
@@ -249,18 +377,22 @@
                         timer.textContent = "Candidates Registration begins in: " + format(registerationStart - now);
                         status.textContent = "";
                         votes.textContent = "";
+                        showLive.textContent = "";
                     } else if (now >= registerationStart && now < start) {
                         status.textContent = "Candidates Registeration period has started.";
                         timer.textContent = "Voting starts in: " + format(start - now);
                         votes.textContent = "";
+                        showLive.textContent = "";
                     } else if (now >= start && now < end) {
                         timer.textContent = "Election ends in: " + format(end - now);
                         status.textContent = "";
+                        showLive.textContent = "Results (LIVE)";
 
                     } else {
                         timer.textContent = "Election finished.";
                         status.textContent = now + "<" + registerationStart;
                         votes.textContent = "";
+                        showLive.textContent = "Results (LIVE)";
                     }
                 });
             }

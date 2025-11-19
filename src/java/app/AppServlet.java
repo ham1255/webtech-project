@@ -14,6 +14,9 @@ import polling.election.Election;
 import polling.election.ElectionDataStore;
 import polling.election.ElectionServiceProvider;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -87,8 +90,8 @@ public class AppServlet extends HttpServlet {
                     if (!vistor.roles.contains(User.Role.ADMIN)) {
                         request.getRequestDispatcher("/app/access_denied.jsp").forward(request, response);
                     } else {
-                        String electionId = request.getParameter("id");
-                        Election election = es.findElectionById(electionId).get();
+                        
+                        Election election = es.createElection("Student council election (2025)", LocalDateTime.now(), LocalDateTime.now().plusMinutes(10), LocalDateTime.now().plusMinutes(70));
                         Queue<User> candidatesPossible = new ArrayDeque<>();
                         for (User user : am.getStore().getAllUsers()) {
                             if (user.hasRole(Role.CANDIDATE)) {
@@ -99,7 +102,7 @@ public class AppServlet extends HttpServlet {
                             Candidate candidate = new Candidate(user.id, StudentCouncilElectionChair.random(), election.getElectionId());
                             es.addCandidate(election, candidate);
                         }
-                        response.getWriter().println("done");
+                        response.getWriter().println("done: created election for demo");
                     }
                 }
                 case "/app/profile" ->
@@ -121,29 +124,49 @@ public class AppServlet extends HttpServlet {
                                 return;
                             } else {
                                 Election election = es.findElectionById(electionId).get();
+
+                                JsonObjectBuilder mainBuilder = Json.createObjectBuilder();
+                                JsonObjectBuilder votesBuilder = Json.createObjectBuilder();
+                                JsonObjectBuilder namesBuilder = Json.createObjectBuilder();
+
                                 int votes = es.getTotalVotes(election);
-                                String electionVotes = """
-                                    {
-                                        "votes":%votes%
+                                for (Map.Entry<StudentCouncilElectionChair, Map<String, Integer>> entry : es.getCandidatesVotesPerChair(election).entrySet()) {
+
+                                    StudentCouncilElectionChair chair = entry.getKey();
+                                    Map<String, Integer> candidateVotes = entry.getValue();
+
+                                    JsonObjectBuilder chairObj = Json.createObjectBuilder();
+
+                                    for (Map.Entry<String, Integer> cv : candidateVotes.entrySet()) {
+                                        chairObj.add(cv.getKey(), cv.getValue());
+                                        namesBuilder.add(cv.getKey(), am.getUserById(cv.getKey()).fullName);
                                     }
-                                """;
-                                electionVotes = electionVotes.replace("%votes%", String.valueOf(votes));
+
+                                    votesBuilder.add(chair.getDisplayName(), chairObj);
+                                }
+
+                                mainBuilder.add("total_votes", votes);
+                                mainBuilder.add("votes", votesBuilder.build());
+                                mainBuilder.add("names", namesBuilder.build());
+
+                                JsonObject json = mainBuilder.build();
+
                                 response.setContentType("application/json");
-                                response.getWriter().write(electionVotes);
+                                response.getWriter().write(json.toString());
                                 return;
                             }
+
                         } else if (appMode.equals("election-vote")) {
                             String electionId = request.getParameter("electionId");;
                             request.setAttribute("appMode", "election-vote");
                             Election election = es.findElectionById(electionId).get();
-                            
-                            
+
                             if (es.hasUserVoted(election, vistor)) {
-                            
-                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
-                                            Map.of("alert-message", "You have already voted in this election"
-                                            )));
-                             return;
+
+                                response.sendRedirect(buildRedirect(ctx, "/app/voting",
+                                        Map.of("alert-message", "You have already voted in this election"
+                                        )));
+                                return;
                             }
                             List<Candidate> candidates = es.findCandidatesByElection(election);
 
@@ -373,6 +396,19 @@ public class AppServlet extends HttpServlet {
                                         )));
 
                             }
+                            case "delete-election" -> {
+
+                                String electionId = request.getParameter("election-id");
+                                
+
+                                es.deleteElection(electionId);
+
+                                response.sendRedirect(buildRedirect(ctx, "/app/admin",
+                                        Map.of("alert-message", "Election was deleted: " + electionId,
+                                                "appMode", "elections"
+                                        )));
+
+                            }
                             default -> {
 
                                 response.sendRedirect(buildRedirect(ctx, "/app/admin",
@@ -395,21 +431,21 @@ public class AppServlet extends HttpServlet {
                             String electionId = request.getParameter("electionId");
                             Election election = es.findElectionById(electionId).get();
                             if (es.hasUserVoted(election, voter)) {
-                            
-                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
-                                            Map.of("alert-message", "You have already voted in this election"
-                                            )));
-                             return;
+
+                                response.sendRedirect(buildRedirect(ctx, "/app/voting",
+                                        Map.of("alert-message", "You have already voted in this election"
+                                        )));
+                                return;
                             }
                             Map<StudentCouncilElectionChair, String> votes = new HashMap<>();
                             for (StudentCouncilElectionChair chair : StudentCouncilElectionChair.values()) {
-                                 String candidateId = request.getParameter(chair.toString());
-                                 Candidate candidate = es.findCandidateById(election, candidateId).get();
-                                 es.addVoteToCandidate(election, voter, candidate);
+                                String candidateId = request.getParameter(chair.toString());
+                                Candidate candidate = es.findCandidateById(election, candidateId).get();
+                                es.addVoteToCandidate(election, voter, candidate);
                             }
                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
-                                        Map.of("alert-message", "You have voted successfully"  
-                                        )));
+                                    Map.of("alert-message", "You have voted successfully"
+                                    )));
                         }
                     }
                 }
