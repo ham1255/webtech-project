@@ -131,60 +131,40 @@
             transform: scale(1.05);
         }
 
-        .results-container {
+
+        .chair-group {
             margin-top: 12px;
+        }
+
+        .chair-option {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: stretch;          /* make all blocks in a row same height */
-        }
-
-        .chair-block {
-            flex: 1 1 260px;               /* ⬅️ key: same base width for all boxes */
-            box-sizing: border-box;
-
-            background: #5C62D6;
-            border: 1px solid rgba(255,255,255,0.25);  /* softer border, not dark */
-            border-radius: 12px;
-            padding: 12px;
-            color: #e5e7eb;
-
-            display: flex;
-            flex-direction: column;        /* lets content stack nicely */
-            justify-content: flex-start;
-        }
-        .chair-title {
-            font-weight: 600;
-            margin-bottom: 6px;
-            font-size: 15px;
-        }
-        .chair-list {
-            margin: 0;
-            padding-left: 18px;
-        }
-        .chair-list li {
-            margin-bottom: 3px;
-        }
-
-        .vote-item {
-            display: flex;
-            justify-content: space-between;   /* pushes name left and votes right */
             align-items: center;
-            padding: 4px 0;
+            padding: 8px 10px;
+            background: #0f172a;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.15s;
         }
 
-        .vote-name {
-            flex: 1;                           /* long names won't push votes */
-            max-width: 70%;                    /* prevent too long names from eating space */
-            overflow: hidden;
-            text-overflow: ellipsis;           /* (…) if too long */
-            white-space: nowrap;
+        .chair-option:hover {
+            border-color: #22c55e;
+            background: #1e293b;
         }
 
-        .vote-count {
-            width: 90px;                       /* fixed width keeps all aligned */
-            text-align: right;
-            flex-shrink: 0;
+        .chair-option input {
+            margin-right: 10px;
+        }
+
+        .chair-label-title {
+            color: #e5e7eb;
+            font-weight: 600;
+        }
+
+        .chair-label-sub {
+            font-size: 12px;
+            color: #9ca3af;
         }
 
 
@@ -203,13 +183,13 @@
         <% if (appMode.equals("election-select")) { %>
 
         <div class="container">
-            
+
             <%
                 List<Election> elections = (List<Election>) request.getAttribute("elections");
 
                 if (elections == null || elections.isEmpty()) {
             %>
-            <div class="no-elections">There are no elections & polls at the moment.</div>
+            <div class="no-elections">There are no elections at the moment.</div>
 
             <%
             } else {
@@ -229,19 +209,16 @@
 
                 <div class="name"><%= e.getName()%></div>
                 <div class="status">loading...</div>
-                <div class="votes">loading...</div>
                 <div class="timer">Calculating time…</div>
                 <div>
 
                 </div>
-                <form class="vote-form" method="get" action="<%= ctx%>/app/voting">
-                    <input type="hidden" name="appMode" value="election-vote">
+                <form class="register-form" method="get" action="<%= ctx%>/app/candidate">
+                    <input type="hidden" name="appMode" value="election-candidate-register">
                     <input type="hidden" name="electionId" value="<%= e.getElectionId()%>"><br>
-                    <button class="page-btn">Vote now!</button>
+                    <button class="page-btn">Register Now!</button>
                 </form>
-                 <br>
-                 <div id="showLive" class="name"></div>   
-                 <div id="results-container" class="results-container"></div>
+
 
 
             </div>
@@ -284,115 +261,29 @@
                     let start = parseInt(box.dataset.start);
                     let end = parseInt(box.dataset.end);
                     let election = box.dataset.election;
-                    var electionVotes = 0;
-                    let votes = box.querySelector(".votes");
+                    const registerForm = box.querySelector(".register-form");
                     let timer = box.querySelector(".timer");
                     let status = box.querySelector(".status");
-                    const voteForm = box.querySelector(".vote-form");
-                    let showLive = document.getElementById("showLive");
 
-                    fetch(`<%=ctx%>/app/voting?appMode=election-json-votes&electionId=` + election)
-                            .then(res => res.json())
-                            .then(data => {
-                                electionVotes = data.total_votes;
-                                if (now >= start && now < end) {
-                                    votes.textContent = "Total Votes (LIVE): " + electionVotes;
-                                }
-                                var names = data.names; // your names object from the response
-
-                                const resultsContainer = box.querySelector("#results-container");
-                                resultsContainer.innerHTML = ""; // clear old results
-                                const votesPerChair = data.votes || {};
-                                for (const chairName in votesPerChair) {
-
-                                    const chairBlock = document.createElement("div");
-                                    chairBlock.className = "chair-block";
-
-                                    const title = document.createElement("div");
-                                    title.className = "chair-title";
-                                    title.textContent = chairName + " Results";
-                                    chairBlock.appendChild(title);
-
-                                    const list = document.createElement("ol");
-                                    list.className = "chair-list";
-                                    const entries = Object.entries(votesPerChair[chairName])
-                                            .sort((a, b) => b[1] - a[1])
-                                            .slice(0, 10);
-
-
-
-                                    entries.forEach(function (entry) {
-                                        var candidateId = entry[0];
-                                        var count = entry[1];
-
-                                        // Read names from your response
-                                        var name = names[candidateId];
-
-                                        // If name exists → "Name (ID)"
-                                        // If not → just ID
-                                        var display = name ? (name + " (" + candidateId + ")") : candidateId;
-
-                                        // Create <li class="vote-item">
-                                        var li = document.createElement("li");
-                                        li.className = "vote-item";
-
-                                        // Create <span class="vote-name">
-                                        var nameSpan = document.createElement("span");
-                                        nameSpan.className = "vote-name";
-                                        nameSpan.textContent = display;
-
-                                        // Create <span class="vote-count">
-                                        var countSpan = document.createElement("span");
-                                        countSpan.className = "vote-count";
-                                        countSpan.textContent = count + " vote" + (count !== 1 ? "s" : "");
-
-                                        // Add children
-                                        li.appendChild(nameSpan);
-                                        li.appendChild(countSpan);
-
-                                        // Add to list
-                                        list.appendChild(li);
-                                    });
-
-                                    chairBlock.appendChild(list);
-                                    resultsContainer.appendChild(chairBlock);
-
-
-                                }
-
-
-
-                            });
-
-                    if (voteForm) {
-                        if (now > start && now < end) {
-                            voteForm.style.display = "block";
+                    if (registerForm) {
+                        if (now >= registerationStart && now < start) {
+                            registerForm.style.display = "block";
                         } else {
-                            voteForm.style.display = "none";
+                            registerForm.style.display = "none";
                         }
                     }
 
 
                     if (now < registerationStart) {
                         timer.textContent = "Candidates Registration begins in: " + format(registerationStart - now);
-                        status.textContent = "";
-                        votes.textContent = "";
-                        showLive.textContent = "";
                     } else if (now >= registerationStart && now < start) {
                         status.textContent = "Candidates Registeration period has started.";
                         timer.textContent = "Voting starts in: " + format(start - now);
-                        votes.textContent = "";
-                        showLive.textContent = "";
                     } else if (now >= start && now < end) {
-                        timer.textContent = "Election ends in: " + format(end - now);
+                        timer.textContent = "Registeration closed, election began.";
                         status.textContent = "";
-                        showLive.textContent = "Results (LIVE)";
-
                     } else {
                         timer.textContent = "Election finished.";
-                        status.textContent = now + "<" + registerationStart;
-                        votes.textContent = "";
-                        showLive.textContent = "Results (LIVE)";
                     }
                 });
             }
@@ -401,57 +292,42 @@
             setInterval(updateTimers, 1000);
         </script>
 
-        <% } else {%>
-        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/voting" class="page-btn">Go back</a>
+        <% } else if (appMode.equals("election-candidate-register")) {%>
+        <a style= "margin-top:10px; display:inline-block;" href="<%= ctx%>/app/candidate" class="page-btn">Go back</a>
 
 
         <%
 
             Election election = (Election) request.getAttribute("election");
-            Map<StudentCouncilElectionChair, List<Candidate>> candidatesByChair
-                    = (Map<StudentCouncilElectionChair, List<Candidate>>) request.getAttribute("candidatesByChair");
-
 
         %>
-        <style>
-            .select-box {
-                width: 260px;
-                padding: 12px;
-                font-size: 16px;
-                border-radius: 10px;
-                border: 1px solid #cfd3d4;
-                background: #fff;
-                color: #000;
-                outline: none;
-                transition: 0.2s;
-            }
-
-            .select-box:focus {
-                border-color: #43A5BE;
-                box-shadow: 0 0 5px rgba(67,165,190,0.8);
-            }
-        </style>
         <div class="container">
             <div class="election-box"> 
 
-                <form method="post" action="<%=ctx%>/app/voting" class="vote-form">
+                <form method="post" action="<%=ctx%>/app/candidate" class="vote-form">
                     <input type="hidden" name="electionId" value="<%= election.getElectionId()%>">
-                    <input type="hidden" name="operation" value="vote">
-                    <% for (Map.Entry<StudentCouncilElectionChair, List<Candidate>> entry : candidatesByChair.entrySet()) {
-                            StudentCouncilElectionChair chair = entry.getKey();
-                            List<Candidate> candidates = entry.getValue();
-                    %>
+                    <input type="hidden" name="operation" value="register">
 
-                    <label><strong><%= chair.getDisplayName()%> Candidates:</strong></label><br><br>
 
-                    <select name="<%= chair%>" class="select-box">
-                        <% for (Candidate c : candidates) {%>
-                        <option value="<%= c.getUserID()%>"> <%= c.getUserID()%>: <%= c.getName()%></option>
+                    <div class="chair-group">
+                        <p>Select Your Student Council Chair:</p>
+
+                        <% for (StudentCouncilElectionChair chair : StudentCouncilElectionChair.values()) {%>
+                        <label class="chair-option">
+                            <input type="radio" name="chair" value="<%= chair.toString()%>" required>
+                            <div>
+                                <div class="chair-label-title"><%= chair.getDisplayName()%></div>
+                                <div class="chair-label-sub">Max seats: <%= chair.getMaxSeats()%></div>
+                            </div>
+                        </label>
                         <% } %>
-                    </select><br><br>
-                    <% } %>
+                    </div>
 
-                    <input class="page-btn" type="submit" value="Vote now!">
+
+
+
+                    <br><br><br>
+                    <input class="page-btn" type="submit" value="Register now!">
                 </form>
             </div>
         </div>

@@ -209,7 +209,7 @@
 
                 if (elections == null || elections.isEmpty()) {
             %>
-            <div class="no-elections">There are no elections & polls at the moment.</div>
+            <div class="no-elections">There are no elections at the moment.</div>
 
             <%
             } else {

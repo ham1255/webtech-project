@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -90,7 +91,7 @@ public class AppServlet extends HttpServlet {
                     if (!vistor.roles.contains(User.Role.ADMIN)) {
                         request.getRequestDispatcher("/app/access_denied.jsp").forward(request, response);
                     } else {
-                        
+
                         Election election = es.createElection("Student council election (2025)", LocalDateTime.now(), LocalDateTime.now().plusMinutes(10), LocalDateTime.now().plusMinutes(70));
                         Queue<User> candidatesPossible = new ArrayDeque<>();
                         for (User user : am.getStore().getAllUsers()) {
@@ -107,8 +108,11 @@ public class AppServlet extends HttpServlet {
                 }
                 case "/app/profile" ->
                     request.getRequestDispatcher("/app/profile.jsp").forward(request, response);
-                case "/app/support" ->
+                case "/app/support" -> {
+
                     request.getRequestDispatcher("/app/support.jsp").forward(request, response);
+
+                }
                 case "/app/voting" -> {
                     if (!vistor.roles.contains(User.Role.STUDENT)) {
                         request.getRequestDispatcher("/app/access_denied.jsp").forward(request, response);
@@ -116,7 +120,7 @@ public class AppServlet extends HttpServlet {
                         String appMode = request.getParameter("appMode");
                         if (appMode == null || appMode.isEmpty() || appMode.equals("election-select")) {
                             request.setAttribute("appMode", "election-select");
-                            request.setAttribute("elections", es.findAllElections());
+                            request.setAttribute("elections", es.findActiveElections());
                         } else if (appMode.equals("election-json-votes")) {
                             String electionId = request.getParameter("electionId");
                             if (electionId == null || electionId.isEmpty() || es.findElectionById(electionId).isEmpty()) {
@@ -157,7 +161,7 @@ public class AppServlet extends HttpServlet {
                             }
 
                         } else if (appMode.equals("election-vote")) {
-                            String electionId = request.getParameter("electionId");;
+                            String electionId = request.getParameter("electionId");
                             request.setAttribute("appMode", "election-vote");
                             Election election = es.findElectionById(electionId).get();
 
@@ -194,6 +198,33 @@ public class AppServlet extends HttpServlet {
                     if (!vistor.roles.contains(User.Role.CANDIDATE)) {
                         request.getRequestDispatcher("/app/access_denied.jsp").forward(request, response);
                     } else {
+
+                        String appMode = request.getParameter("appMode");
+                        if (appMode == null || appMode.isEmpty() || appMode.equals("election-select")) {
+                            request.setAttribute("appMode", "election-select");
+                            request.setAttribute("elections", es.findActiveElections());
+                        } else if (appMode.equals("election-candidate-register")) {
+                            request.setAttribute("appMode", "election-candidate-register");
+                            String electionId = request.getParameter("electionId");
+                            Optional<Election> electionOptional = es.findElectionById(electionId);
+                            if (electionOptional.isEmpty()) {
+                                response.sendRedirect(buildRedirect(ctx, "/app/candidate",
+                                        Map.of("alert-message", "election doesn't exists"
+                                        )));
+                                return;
+                            }
+                            Election election = electionOptional.get();
+
+                            if (es.findCandidateById(election, vistor.id).isPresent()) {
+                                response.sendRedirect(buildRedirect(ctx, "/app/candidate",
+                                        Map.of("alert-message", "You have already registered in this election"
+                                        )));
+                                return;
+                            }
+
+                            request.setAttribute("election", election);
+                        }
+
                         request.getRequestDispatcher("/app/candidate.jsp").forward(request, response);
                     }
 
@@ -399,7 +430,6 @@ public class AppServlet extends HttpServlet {
                             case "delete-election" -> {
 
                                 String electionId = request.getParameter("election-id");
-                                
 
                                 es.deleteElection(electionId);
 
@@ -437,10 +467,15 @@ public class AppServlet extends HttpServlet {
                                         )));
                                 return;
                             }
-                            Map<StudentCouncilElectionChair, String> votes = new HashMap<>();
                             for (StudentCouncilElectionChair chair : StudentCouncilElectionChair.values()) {
                                 String candidateId = request.getParameter(chair.toString());
-                                Candidate candidate = es.findCandidateById(election, candidateId).get();
+                                Optional<Candidate> optional = es.findCandidateById(election, candidateId);
+                                if (optional.isEmpty()) {
+                                    continue;
+                                }
+
+                                Candidate candidate = optional.get();
+
                                 es.addVoteToCandidate(election, voter, candidate);
                             }
                             response.sendRedirect(buildRedirect(ctx, "/app/voting",
@@ -448,6 +483,48 @@ public class AppServlet extends HttpServlet {
                                     )));
                         }
                     }
+                }
+                case "/app/candidate" -> {
+                    if (!vistor.roles.contains(User.Role.CANDIDATE)) {
+                        response.sendError(403, "Access denied");
+                    } else {
+                        String operation = request.getParameter("operation");
+                        if (operation.equals("register")) {
+                            String chairParam = request.getParameter("chair");
+                            if (chairParam == null || chairParam.isBlank()) {
+                                throw new IllegalArgumentException("No chair selected");
+                            }
+
+                            StudentCouncilElectionChair chair = StudentCouncilElectionChair.valueOf(chairParam);
+
+                            String electionId = request.getParameter("electionId");
+
+                            Optional<Election> electionOptional = es
+                                    .findElectionById(electionId);
+
+                            if (electionOptional.isEmpty()) {
+                                response.sendRedirect(buildRedirect(ctx, "/app/candidate",
+                                        Map.of("alert-message", "Election doesn't exists",
+                                                "appMode", "election-select"
+                                        )));
+                                return;
+                            }
+
+                            Election election = electionOptional.get();
+                            Candidate candidate = new Candidate(
+                                    vistor.id,
+                                    chair,
+                                    election.getElectionId()
+                            );
+
+                            es.addCandidate(election, candidate);
+                            response.sendRedirect(buildRedirect(ctx, "/app/candidate",
+                                    Map.of("alert-message", "you have been registered in the election.",
+                                            "appMode", "election-select"
+                                    )));
+                        }
+                    }
+
                 }
                 default ->
                     response.sendRedirect("/app");
