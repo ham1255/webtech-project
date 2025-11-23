@@ -22,14 +22,9 @@
                 String email = (String) request.getAttribute("email");
                 boolean wrongPassword = request.getAttribute("wrongPassword") != null ? true : false;
             %>
-            <form method="POST" action="${pageContext.request.contextPath}/auth/login">
-                <!--   
+            <form method="POST" action="${pageContext.request.contextPath}/auth/login">  
                 <input type="email" name="email" placeholder="Email address" value="<%= (email != null) ? email : "" %>" required>
                 <input type="password" name="password" placeholder="Password" required>
-                
-                -->
-                <input type="email" name="email" placeholder="Email address" value="202311566@ajmanuni.ac.ae" required>
-                <input type="password" name="password" placeholder="Pas11sword" value="1111" required>
                 <button type="submit">Login</button>
             </form>
             <div class="footer">

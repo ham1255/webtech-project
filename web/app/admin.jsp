@@ -448,7 +448,6 @@
         <script>
             document.addEventListener("DOMContentLoaded", () => {
 
-                // find ALL forms that want election validation
                 const electionForms = document.querySelectorAll("form[custom-type='electionForm']");
 
                 electionForms.forEach(form => {
@@ -459,14 +458,12 @@
                         const start = new Date(form.querySelector("[name='startsAt']").value);
                         const end = new Date(form.querySelector("[name='endsAt']").value);
 
-                        // Validate: registration < start
                         if (reg >= start) {
                             e.preventDefault();
                             alert("Registration start time must be BEFORE the election start time.");
                             return false;
                         }
 
-                        // Validate: start < end
                         if (start >= end) {
                             e.preventDefault();
                             alert("Election start time must be BEFORE the election end time.");

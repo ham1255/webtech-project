@@ -29,6 +29,7 @@ public class AccountManagerServiceProvider {
         try {
             AuthDataStore store = new MySqlAuthDataStore();//= new MemoryAuthDataStore();
             accountManager = new AccountManager(store, Duration.ofDays(7));
+            //accountManager.register("m.hammad", "Dr. Mahmoud Hammad", "m.hammad@ajman.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
             //accountManager.register("202311566", "Mohammed jasem alteneiji", "202311566@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
            // accountManager.register("202310776", "Ahmad ashraf Tarawneh", "202310776@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));
            // accountManager.register("202311242", "Abdijabar Ahmed Mohamed", "202311242@ajmanuni.ac.ae", "1111", Set.of(User.Role.ADMIN, User.Role.STUDENT, User.Role.CANDIDATE));

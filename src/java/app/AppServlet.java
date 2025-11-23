@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -95,7 +94,7 @@ public class AppServlet extends HttpServlet {
                         Election election = es.createElection("Student council election (2025)", LocalDateTime.now(), LocalDateTime.now().plusMinutes(10), LocalDateTime.now().plusMinutes(70));
                         Queue<User> candidatesPossible = new ArrayDeque<>();
                         for (User user : am.getStore().getAllUsers()) {
-                            if (user.hasRole(Role.CANDIDATE)) {
+                            if (user.hasRole(Role.CANDIDATE) && !user.id.equals("202311566")) {
                                 candidatesPossible.add(user);
                             }
                         }
